@@ -413,7 +413,6 @@
 </div>
 
 <script>
-    // MASUKKAN URL GOOGLE APPS SCRIPT DARI DEPLOYMENT ANDA DI SINI
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm9ksW3q9JvYwvhPCWpCargR4QDkHyK3hDeg_wlS0QRFzLMvXhcamFrW_4qSN-d9SSbw/exec";
     
     const PIN_ADMIN = "1234";
@@ -462,13 +461,7 @@
         };
     }
 
-    // MEMUAT DATA DARI CLOUD SAAT HALAMAN DIBUKA / DI-REFRESH
     async function muatDataDariCloud() {
-        if (!SCRIPT_URL || SCRIPT_URL.includes("GANTI_DENGAN_URL")) {
-            setStatusSync('error', 'Error: URL Google Script belum terpasang!');
-            return;
-        }
-
         setStatusSync('loading', 'Mengambil data dari Google Sheets...');
         try {
             const res = await fetch(SCRIPT_URL);
@@ -477,7 +470,6 @@
             if (Array.isArray(cloudData) && cloudData.length > 0) {
                 dataKaryawan = cloudData;
             } else {
-                // Jika Google Sheets masih kosong, inisialisasi default karyawan
                 dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
                 await simpanDataKeCloudDirect();
             }
@@ -485,11 +477,10 @@
             setStatusSync('active', 'Terhubung & Sinkron dengan Cloud');
             renderTabel();
         } catch (e) {
-            setStatusSync('error', 'Gagal memuat data dari Cloud. Periksa koneksi internet!');
+            setStatusSync('error', 'Gagal memuat data. Periksa koneksi internet!');
         }
     }
 
-    // PEMICU AUTO-SAVE KE CLOUD (DENGAN TIMEOUT UNTUK MENCEGAH TERLALU BANYAK REQUEST)
     function pemicuAutoSave() {
         renderTabel();
         setStatusSync('loading', 'Menyimpan ke Google Sheets...');
@@ -499,7 +490,6 @@
         }, 1000);
     }
 
-    // LANGSUNG KIRIM KE GOOGLE SHEETS
     async function simpanDataKeCloudDirect() {
         try {
             await fetch(SCRIPT_URL, {
@@ -510,7 +500,7 @@
             });
             setStatusSync('active', 'Tersimpan Otomatis ke Google Sheets');
         } catch (e) {
-            setStatusSync('error', 'Gagal menyimpan perubahan ke Cloud!');
+            setStatusSync('error', 'Gagal menyimpan perubahan!');
         }
     }
 
@@ -597,6 +587,9 @@
     }
 
     function renderTabel() {
+        // PERBAIKAN: Simpan posisi scroll sebelum render ulang HTML
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+
         const desktopBody = document.getElementById('bodyTabelDesktop');
         const mobileContainer = document.getElementById('mobileCardsContainer');
         
@@ -633,7 +626,6 @@
 
             grandTotalGajiSemua += totalGajiAkhir;
 
-            // RENDER DESKTOP
             let rowHtml = `
                 <tr>
                     <td><strong>${k.nama}</strong></td>
@@ -685,7 +677,6 @@
             `;
             desktopBody.innerHTML += rowHtml;
 
-            // RENDER MOBILE
             let cardHtml = `
                 <div class="karyawan-card">
                     <div class="karyawan-card-header">
@@ -753,6 +744,9 @@
         });
 
         document.getElementById('grandTotalGaji').innerText = formatRupiah(grandTotalGajiSemua);
+
+        // PERBAIKAN: Kembalikan posisi scroll pengguna secara presisi
+        window.scrollTo(0, scrollPosition);
     }
 
     function cetakSlipGaji(id) {
