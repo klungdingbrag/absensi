@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TB Nusantara Building Material - Absensi & Slip Gaji Cloud</title>
+    <title>TB Nusantara Building Material - Absensi & Slip Gaji V14</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -51,9 +51,7 @@
         .brand-title h1 { font-size: 18px; color: var(--primary); font-weight: 800; }
         .brand-title p { font-size: 11px; color: #64748b; font-weight: 600; }
 
-        .header-badges { display: flex; align-items: center; gap: 8px; }
-
-        .badge-v15 {
+        .badge-v14 {
             background-color: var(--accent);
             color: white;
             padding: 4px 8px;
@@ -61,21 +59,6 @@
             font-size: 11px;
             font-weight: 700;
         }
-
-        .sync-status {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .sync-idle { background-color: #e2e8f0; color: #475569; }
-        .sync-loading { background-color: #fef08a; color: #854d0e; }
-        .sync-success { background-color: #dcfce7; color: #15803d; }
-        .sync-error { background-color: #fee2e2; color: #b91c1c; }
 
         .card {
             background: #ffffff;
@@ -308,9 +291,8 @@
             <h1>TB NUSANTARA</h1>
             <p>BUILDING MATERIAL — ABSENSI, KASBON & SLIP GAJI</p>
         </div>
-        <div class="header-badges">
-            <span id="syncStatus" class="sync-status sync-idle">☁️ Menghubungkan...</span>
-            <span class="badge-v15">V15.3 FIX</span>
+        <div>
+            <span class="badge-v14">V14 STABLE</span>
         </div>
     </div>
 
@@ -391,18 +373,14 @@
         </div>
 
         <div style="display: flex; gap: 8px; flex-direction: column; margin-top: 15px;">
-            <button class="btn btn-primary" onclick="muatDataDariCloud(true)">🔄 Ambil Data Terakhir Dari Cloud</button>
-            <button class="btn btn-warning" onclick="resetMinggu(true)">📦 Arsipkan & Reset Absensi Minggu Ini</button>
-            <button class="btn btn-danger" onclick="resetMinggu(false)">⚠️ Reset Absensi Tanpa Arsip</button>
+            <button class="btn btn-danger" onclick="resetMinggu()">⚠️ Reset Absensi Minggu Ini</button>
             <button class="btn btn-secondary" onclick="resetSemuaKeDefault()">⚙️ Reset Ke Karyawan Default</button>
         </div>
     </div>
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbz66jIqfIOU-kEle5hriAjDU749i-AFUPzRQM1Bj-tcQaHOi75UPbAW_ElMsMEPagi6Qg/exec";
     const PIN_ADMIN = "1234";
-
     const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     const DEFAULT_KARYAWAN = [
         { nama: 'Lucky', gajiPokok: 75000 },
@@ -411,15 +389,6 @@
         { nama: 'Tomas', gajiPokok: 75000 },
         { nama: 'Kang To', gajiPokok: 85000 }
     ];
-
-    let dataKaryawan = [];
-    let timerDebounce;
-
-    function setStatusSync(status, pesan) {
-        const el = document.getElementById('syncStatus');
-        el.className = `sync-status sync-${status}`;
-        el.innerText = pesan;
-    }
 
     function verifikasiPin() {
         const input = prompt("Masukkan PIN Admin:");
@@ -447,8 +416,13 @@
         };
     }
 
-    // Tanggal Awal
-    let tglMulaiSaved = localStorage.getItem('tglMulaiAbsensiV13');
+    let dataKaryawan = JSON.parse(localStorage.getItem('dataKaryawanAbsensiV14'));
+    if (!dataKaryawan || dataKaryawan.length === 0) {
+        dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
+        simpanData();
+    }
+
+    let tglMulaiSaved = localStorage.getItem('tglMulaiAbsensiV14');
     if (!tglMulaiSaved) {
         let hariIni = new Date();
         let selisihKeMinggu = hariIni.getDay();
@@ -458,89 +432,16 @@
     }
     document.getElementById('tglMulai').value = tglMulaiSaved;
 
-    // FUNGSI UTAMA: Inisialisasi awal membaca LocalStorage dulu agar TIDAK HILANG
-    function inisialisasiDataAwal() {
-        const localData = localStorage.getItem('dataKaryawanAbsensiV13');
-        if (localData) {
-            try {
-                dataKaryawan = JSON.parse(localData);
-                renderTabel();
-                setStatusSync('success', '📱 Data Lokal Siap');
-            } catch(e) {
-                dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-                simpanDataKeCloud();
-            }
-        } else {
-            // Jika benar-benar pertama kali, ambil dari Cloud
-            muatDataDariCloud(false);
-        }
-    }
-
-    async function muatDataDariCloud(konfirmasi = false) {
-        if (konfirmasi) {
-            let yakin = confirm("Perhatian: Mengambil data dari cloud akan menimpa perubahan centang lokal Anda jika belum terkirim. Lanjutkan?");
-            if (!yakin) return;
-        }
-
-        setStatusSync('loading', '🔄 Memuat Cloud...');
-        try {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            
-            if (Array.isArray(data) && data.length > 0) {
-                dataKaryawan = data;
-                localStorage.setItem('dataKaryawanAbsensiV13', JSON.stringify(dataKaryawan));
-                renderTabel();
-                setStatusSync('success', '☁️ Tersinkron Cloud');
-            } else if (!konfirmasi && dataKaryawan.length === 0) {
-                dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-                simpanDataKeCloud();
-            }
-        } catch (err) {
-            console.error(err);
-            setStatusSync('error', '❌ Gagal Cloud (Pakai Lokal)');
-        }
-    }
-
-    // FUNGSI SIMPAN: Langsung ke LocalStorage (Instan) + Async ke Cloud
-    function simpanDataKeCloud(arsip = false) {
-        // 1. Simpan detik ini juga ke LocalStorage (Cegah Hilang saat Refresh)
-        localStorage.setItem('dataKaryawanAbsensiV13', JSON.stringify(dataKaryawan));
-        
-        // 2. Tampilkan di layar langsung tanpa reset posisi
+    function simpanData() {
+        localStorage.setItem('dataKaryawanAbsensiV14', JSON.stringify(dataKaryawan));
         renderTabel();
-
-        // 3. Kirim ke Server Cloud secara Background
-        setStatusSync('loading', '⏳ Menyimpan...');
-        clearTimeout(timerDebounce);
-
-        timerDebounce = setTimeout(async () => {
-            try {
-                let payload = {
-                    action: arsip ? "archive" : "save",
-                    periode: `${document.getElementById('tglMulai').value} s.d ${document.getElementById('tglSelesai').value}`,
-                    data: dataKaryawan
-                };
-
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                setStatusSync('success', arsip ? '📦 Diarsipkan' : '☁️ Tersimpan di Cloud');
-            } catch (err) {
-                console.error(err);
-                setStatusSync('error', '⚠️ Tersimpan Lokal (Gagal Cloud)');
-            }
-        }, 800);
     }
 
     function updatePeriodeTanggal() {
         let tglMulaiInput = document.getElementById('tglMulai').value;
         if (!tglMulaiInput) return;
 
-        localStorage.setItem('tglMulaiAbsensiV13', tglMulaiInput);
+        localStorage.setItem('tglMulaiAbsensiV14', tglMulaiInput);
         let startDate = new Date(tglMulaiInput);
 
         HARI.forEach((h, index) => {
@@ -571,13 +472,13 @@
         dataKaryawan.push(karyawanBaru);
         namaInput.value = '';
         gajiInput.value = '';
-        simpanDataKeCloud();
+        simpanData();
     }
 
     function hapusKaryawan(id) {
         if (!verifikasiPin()) return;
         dataKaryawan = dataKaryawan.filter(k => k.id !== id);
-        simpanDataKeCloud();
+        simpanData();
     }
 
     function updateAbsensi(id, hari, field, value) {
@@ -595,7 +496,7 @@
             } else {
                 karyawan.absensi[hari][field] = parseFloat(value) || 0;
             }
-            simpanDataKeCloud();
+            simpanData();
         }
     }
 
@@ -603,7 +504,7 @@
         const karyawan = dataKaryawan.find(k => k.id === id);
         if (karyawan) {
             karyawan[field] = parseFloat(value) || 0;
-            simpanDataKeCloud();
+            simpanData();
         }
     }
 
@@ -612,9 +513,6 @@
     }
 
     function renderTabel() {
-        // Trik Menjaga Posisi Scroll Saat Render
-        const scrollTopLayar = window.pageYOffset || document.documentElement.scrollTop;
-
         const desktopBody = document.getElementById('bodyTabelDesktop');
         const mobileContainer = document.getElementById('mobileCardsContainer');
         
@@ -651,7 +549,7 @@
 
             grandTotalGajiSemua += totalGajiAkhir;
 
-            // DESKTOP HTML
+            // RENDER DESKTOP
             let rowHtml = `
                 <tr>
                     <td><strong>${k.nama}</strong></td>
@@ -703,7 +601,7 @@
             `;
             desktopBody.innerHTML += rowHtml;
 
-            // MOBILE HTML
+            // RENDER MOBILE
             let cardHtml = `
                 <div class="karyawan-card">
                     <div class="karyawan-card-header">
@@ -771,9 +669,6 @@
         });
 
         document.getElementById('grandTotalGaji').innerText = formatRupiah(grandTotalGajiSemua);
-
-        // Kembalikan Posisi Scroll
-        window.scrollTo(0, scrollTopLayar);
     }
 
     function cetakSlipGaji(id) {
@@ -842,15 +737,10 @@
         printWindow.document.close();
     }
 
-    function resetMinggu(denganArsip) {
+    function resetMinggu() {
         if (!verifikasiPin()) return;
 
-        let instruksi = denganArsip ? "Selesaikan & Arsipkan data ke Cloud sebelum reset?" : "Reset absensi minggu ini TANPA mengarsipkan?";
-        if (confirm(instruksi)) {
-            if (denganArsip) {
-                simpanDataKeCloud(true);
-            }
-            
+        if (confirm("Reset seluruh data absensi, bonus, dan kasbon untuk minggu ini?")) {
             dataKaryawan.forEach(k => {
                 k.bonus = 0;
                 k.kasbon = 0;
@@ -858,8 +748,7 @@
                     k.absensi[h] = { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 };
                 });
             });
-
-            setTimeout(() => simpanDataKeCloud(false), 500);
+            simpanData();
         }
     }
 
@@ -867,7 +756,7 @@
         if (!verifikasiPin()) return;
         if (confirm('Kembalikan ke daftar karyawan default?')) {
             dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-            simpanDataKeCloud();
+            simpanData();
         }
     }
 
@@ -946,10 +835,9 @@
         XLSX.writeFile(wb, namaFile);
     }
 
-    // PENTING: Baca data lokal terlebih dahulu saat browser dibuka/di-refresh
     window.addEventListener('DOMContentLoaded', () => {
         updatePeriodeTanggal();
-        inisialisasiDataAwal();
+        renderTabel();
     });
 </script>
 </body>
