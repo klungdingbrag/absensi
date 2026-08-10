@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TB Nusantara Building Material - Absensi & Slip Gaji Cloud</title>
+    <title>TB Nusantara Building Material - Absensi & Slip Gaji V15</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -51,31 +51,14 @@
         .brand-title h1 { font-size: 18px; color: var(--primary); font-weight: 800; }
         .brand-title p { font-size: 11px; color: #64748b; font-weight: 600; }
 
-        .header-badges { display: flex; align-items: center; gap: 8px; }
-
-        .badge-v14 {
-            background-color: var(--accent);
+        .badge-v15 {
+            background-color: var(--success);
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 11px;
             font-weight: 700;
         }
-
-        .sync-status {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .sync-idle { background-color: #e2e8f0; color: #475569; }
-        .sync-loading { background-color: #fef08a; color: #854d0e; }
-        .sync-success { background-color: #dcfce7; color: #15803d; }
-        .sync-error { background-color: #fee2e2; color: #b91c1c; }
 
         .card {
             background: #ffffff;
@@ -95,7 +78,7 @@
 
         .periode-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 12px;
             align-items: end;
         }
@@ -147,6 +130,25 @@
         .btn-excel { background-color: var(--excel); }
         .btn-warning { background-color: var(--warning); }
         .btn-secondary { background-color: #64748b; }
+
+        .sync-status {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #94a3b8;
+        }
+        .sync-dot.active { background-color: var(--success); }
+        .sync-dot.loading { background-color: var(--warning); }
 
         .desktop-table-container {
             display: block;
@@ -298,33 +300,6 @@
             .container { padding: 10px; }
             body { padding: 6px; }
         }
-
-        /* Tampilan Area Cetak Slip Gaji */
-        #printableSlip { display: none; }
-
-        @media print {
-            body * { visibility: hidden; }
-            #printableSlip, #printableSlip * { visibility: visible; }
-            #printableSlip {
-                display: block !important;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 20px;
-                background: white;
-            }
-            .slip-box {
-                border: 2px solid #000;
-                padding: 16px;
-                max-width: 400px;
-                margin: 0 auto;
-                font-family: monospace;
-            }
-            .slip-title { text-align: center; font-weight: bold; font-size: 16px; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
-            .slip-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-            .slip-total { border-top: 2px dashed #000; padding-top: 6px; font-weight: bold; font-size: 14px; margin-top: 8px; }
-        }
     </style>
 </head>
 <body>
@@ -333,12 +308,17 @@
     <div class="brand-header">
         <div class="brand-title">
             <h1>TB NUSANTARA</h1>
-            <p>BUILDING MATERIAL — ABSENSI, KASBON & SLIP GAJI</p>
+            <p>BUILDING MATERIAL — ABSENSI & GAJI</p>
         </div>
-        <div class="header-badges">
-            <span id="syncStatus" class="sync-status sync-idle">☁️ Menghubungkan...</span>
-            <span class="badge-v14">V14 PRO</span>
+        <div>
+            <span class="badge-v15">V15 AUTO-SYNC</span>
         </div>
+    </div>
+
+    <!-- Status & Tombol Sinkronisasi -->
+    <div class="sync-status">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncText">Status: Tersimpan Lokal</span>
     </div>
 
     <!-- Periode Tanggal -->
@@ -352,6 +332,9 @@
             <div class="form-group-item">
                 <label for="tglSelesai">Tanggal Selesai (Sabtu):</label>
                 <input type="date" id="tglSelesai" readonly style="background-color: #e2e8f0;">
+            </div>
+            <div class="form-group-item">
+                <button class="btn btn-primary" onclick="paksaSinkronisasiCloud()">🔄 Sinkronisasi Cloud</button>
             </div>
             <div class="form-group-item">
                 <button class="btn btn-excel" onclick="exportKeExcel()">📊 Export Excel</button>
@@ -418,21 +401,17 @@
         </div>
 
         <div style="display: flex; gap: 8px; flex-direction: column; margin-top: 15px;">
-            <button class="btn btn-primary" onclick="muatDataDariCloud()">🔄 Sinkronkan Data Terbaru</button>
-            <button class="btn btn-warning" onclick="resetMinggu(true)">📦 Arsipkan & Reset Absensi Minggu Ini</button>
-            <button class="btn btn-danger" onclick="resetMinggu(false)">⚠️ Reset Absensi Tanpa Arsip</button>
+            <button class="btn btn-danger" onclick="resetMinggu()">⚠️ Reset Absensi Minggu Ini</button>
             <button class="btn btn-secondary" onclick="resetSemuaKeDefault()">⚙️ Reset Ke Karyawan Default</button>
         </div>
     </div>
 </div>
 
-<!-- Area Cetak Slip Gaji (Hidden) -->
-<div id="printableSlip"></div>
-
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbz66jIqfIOU-kEle5hriAjDU749i-AFUPzRQM1Bj-tcQaHOi75UPbAW_ElMsMEPagi6Qg/exec";
-    const PIN_ADMIN = "1234"; // PIN Pengaman Tindakan Kunci
-
+    // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz66jIqfIOU-kEle5hriAjDU749i-AFUPzRQM1Bj-tcQaHOi75UPbAW_ElMsMEPagi6Qg/exec";
+    
+    const PIN_ADMIN = "1234";
     const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     const DEFAULT_KARYAWAN = [
         { nama: 'Lucky', gajiPokok: 75000 },
@@ -442,10 +421,13 @@
         { nama: 'Kang To', gajiPokok: 85000 }
     ];
 
-    function setStatusSync(status, pesan) {
-        const el = document.getElementById('syncStatus');
-        el.className = `sync-status sync-${status}`;
-        el.innerText = pesan;
+    let timerDebounce = null;
+
+    function setStatusSync(type, text) {
+        const dot = document.getElementById('syncDot');
+        const txt = document.getElementById('syncText');
+        dot.className = 'sync-dot ' + type;
+        txt.innerText = 'Status: ' + text;
     }
 
     function verifikasiPin() {
@@ -457,7 +439,7 @@
 
     function buatStrukturKaryawan(nama, gaji) {
         return {
-            id: Date.now() + Math.random(),
+            id: Date.now() + Math.floor(Math.random() * 1000),
             nama: nama,
             gajiPokok: parseFloat(gaji),
             absensi: {
@@ -470,13 +452,18 @@
                 sabtu: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 }
             },
             bonus: 0,
-            kasbon: 0
+            kasbon: 0,
+            lastModified: Date.now()
         };
     }
 
-    let dataKaryawan = [];
+    let dataKaryawan = JSON.parse(localStorage.getItem('dataKaryawanAbsensiV15'));
+    if (!dataKaryawan || dataKaryawan.length === 0) {
+        dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
+        simpanDataLocal();
+    }
 
-    let tglMulaiSaved = localStorage.getItem('tglMulaiAbsensiV13');
+    let tglMulaiSaved = localStorage.getItem('tglMulaiAbsensiV15');
     if (!tglMulaiSaved) {
         let hariIni = new Date();
         let selisihKeMinggu = hariIni.getDay();
@@ -486,63 +473,89 @@
     }
     document.getElementById('tglMulai').value = tglMulaiSaved;
 
-    async function muatDataDariCloud() {
-        setStatusSync('loading', '🔄 Memuat Cloud...');
+    // SIMPAN LOKAL DETIK ITU JUGA
+    function simpanDataLocal() {
+        localStorage.setItem('dataKaryawanAbsensiV15', JSON.stringify(dataKaryawan));
+        renderTabel();
+        pemicuAutoSync();
+    }
+
+    // AUTO SYNC DENGAN DEBOUNCE
+    function pemicuAutoSync() {
+        if (!SCRIPT_URL || SCRIPT_URL.includes("GANTI_DENGAN_URL")) return;
+        
+        setStatusSync('loading', 'Menyimpan perubahan ke cloud...');
+        clearTimeout(timerDebounce);
+        timerDebounce = setTimeout(() => {
+            kirimDataKeCloud();
+        }, 1500);
+    }
+
+    async function kirimDataKeCloud() {
         try {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            
-            if (Array.isArray(data) && data.length > 0) {
-                dataKaryawan = data;
-            } else {
-                dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-                simpanDataKeCloud();
-            }
-            setStatusSync('success', '☁️ Tersinkronisasi');
-            renderTabel();
-        } catch (err) {
-            console.error(err);
-            setStatusSync('error', '❌ Offline / Gagal Cloud');
-            dataKaryawan = JSON.parse(localStorage.getItem('dataKaryawanAbsensiV13')) || DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-            renderTabel();
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataKaryawan)
+            });
+            setStatusSync('active', 'Tersimpan & Terhubung ke Cloud');
+        } catch (e) {
+            setStatusSync('', 'Tersimpan Lokal (Gagal Cloud)');
         }
     }
 
-    let timerDebounce;
-    function simpanDataKeCloud(arsip = false) {
-        localStorage.setItem('dataKaryawanAbsensiV13', JSON.stringify(dataKaryawan));
-        renderTabel();
+    // SINKRONISASI MANUSIAL DENGAN MERGE AMAN (DATA TIDAK HILANG)
+    async function paksaSinkronisasiCloud() {
+        if (!SCRIPT_URL || SCRIPT_URL.includes("GANTI_DENGAN_URL")) {
+            alert("Harap masukkan SCRIPT_URL Google Apps Script Anda terlebih dahulu!");
+            return;
+        }
 
-        setStatusSync('loading', '⏳ Menyimpan...');
-        clearTimeout(timerDebounce);
+        setStatusSync('loading', 'Menyingkronkan data...');
+        try {
+            const res = await fetch(SCRIPT_URL);
+            const cloudData = await res.json();
 
-        timerDebounce = setTimeout(async () => {
-            try {
-                let payload = {
-                    action: arsip ? "archive" : "save",
-                    periode: `${document.getElementById('tglMulai').value} s.d ${document.getElementById('tglSelesai').value}`,
-                    data: dataKaryawan
-                };
+            if (Array.isArray(cloudData) && cloudData.length > 0) {
+                // Merge data: Ambil versi terbaru berdasarkan ID atau gabungkan karyawan baru
+                let mapData = new Map();
+                
+                // Tambahkan data dari cloud dulu
+                cloudData.forEach(k => mapData.set(k.id, k));
 
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                // Timpa dengan data lokal jika lokal lebih baru
+                dataKaryawan.forEach(kLokal => {
+                    if (!mapData.has(kLokal.id)) {
+                        mapData.set(kLokal.id, kLokal);
+                    } else {
+                        let kCloud = mapData.get(kLokal.id);
+                        if ((kLokal.lastModified || 0) >= (kCloud.lastModified || 0)) {
+                            mapData.set(kLokal.id, kLokal);
+                        }
+                    }
                 });
-                setStatusSync('success', arsip ? '📦 Berhasil Diarsipkan' : '☁️ Tersimpan di Cloud');
-            } catch (err) {
-                console.error(err);
-                setStatusSync('error', '❌ Gagal Simpan Cloud');
+
+                dataKaryawan = Array.from(mapData.values());
+                localStorage.setItem('dataKaryawanAbsensiV15', JSON.stringify(dataKaryawan));
+                renderTabel();
+                await kirimDataKeCloud();
+                alert("Sinkronisasi Berhasil! Data lokal dan cloud telah terintegrasi.");
+            } else {
+                await kirimDataKeCloud();
+                alert("Data lokal berhasil dikirimkan ke cloud.");
             }
-        }, 800);
+        } catch (e) {
+            alert("Gagal terhubung ke Google Cloud. Memakai data lokal.");
+            setStatusSync('', 'Tersimpan Lokal');
+        }
     }
 
     function updatePeriodeTanggal() {
         let tglMulaiInput = document.getElementById('tglMulai').value;
         if (!tglMulaiInput) return;
 
-        localStorage.setItem('tglMulaiAbsensiV13', tglMulaiInput);
+        localStorage.setItem('tglMulaiAbsensiV15', tglMulaiInput);
         let startDate = new Date(tglMulaiInput);
 
         HARI.forEach((h, index) => {
@@ -573,18 +586,19 @@
         dataKaryawan.push(karyawanBaru);
         namaInput.value = '';
         gajiInput.value = '';
-        simpanDataKeCloud();
+        simpanDataLocal();
     }
 
     function hapusKaryawan(id) {
         if (!verifikasiPin()) return;
         dataKaryawan = dataKaryawan.filter(k => k.id !== id);
-        simpanDataKeCloud();
+        simpanDataLocal();
     }
 
     function updateAbsensi(id, hari, field, value) {
         const karyawan = dataKaryawan.find(k => k.id === id);
         if (karyawan) {
+            karyawan.lastModified = Date.now();
             if (field === 'hadir') {
                 karyawan.absensi[hari].hadir = value;
                 if (!value) {
@@ -597,15 +611,16 @@
             } else {
                 karyawan.absensi[hari][field] = parseFloat(value) || 0;
             }
-            simpanDataKeCloud();
+            simpanDataLocal();
         }
     }
 
     function updateNilaiLain(id, field, value) {
         const karyawan = dataKaryawan.find(k => k.id === id);
         if (karyawan) {
+            karyawan.lastModified = Date.now();
             karyawan[field] = parseFloat(value) || 0;
-            simpanDataKeCloud();
+            simpanDataLocal();
         }
     }
 
@@ -791,48 +806,66 @@
         const totalPotonganTelat = totalJamTelat * 10000;
         const totalGajiAkhir = totalGajiPokok + totalUangLembur - totalPotonganTelat + (k.bonus || 0) - (k.kasbon || 0);
 
-        const slipContainer = document.getElementById('printableSlip');
-        slipContainer.innerHTML = `
-            <div class="slip-box">
-                <div class="slip-title">TB NUSANTARA<br><small style="font-size:10px;">SLIP GAJI KARYAWAN</small></div>
-                <div class="slip-row"><span>Periode:</span> <span>${document.getElementById('tglMulai').value} - ${document.getElementById('tglSelesai').value}</span></div>
-                <div class="slip-row"><span>Nama:</span> <span><strong>${k.nama}</strong></span></div>
-                <hr style="border-top:1px dashed #000; margin:6px 0;">
-                <div class="slip-row"><span>Gaji Pokok (${totalHadirHari} hr):</span> <span>${formatRupiah(totalGajiPokok)}</span></div>
-                <div class="slip-row"><span>Lembur (${totalJamLembur} jam):</span> <span>+${formatRupiah(totalUangLembur)}</span></div>
-                <div class="slip-row"><span>Telat (${totalJamTelat} jam):</span> <span>-${formatRupiah(totalPotonganTelat)}</span></div>
-                <div class="slip-row"><span>Bonus:</span> <span>+${formatRupiah(k.bonus || 0)}</span></div>
-                <div class="slip-row"><span>Kasbon:</span> <span>-${formatRupiah(k.kasbon || 0)}</span></div>
-                <div class="slip-row slip-total"><span>TOTAL GAJI DITERIMA:</span> <span>${formatRupiah(totalGajiAkhir)}</span></div>
-                <br><br>
-                <div class="slip-row" style="text-align:center; display:block;">
-                    <p>Diterima Oleh,</p><br><br>
-                    <p>( ${k.nama} )</p>
+        const printWindow = window.open('', '_blank', 'width=450,height=600');
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Slip Gaji - ${k.nama}</title>
+                <style>
+                    @page { size: auto; margin: 0; }
+                    body { font-family: monospace; padding: 20px; margin: 0; background: #fff; }
+                    .slip-box { border: 2px solid #000; padding: 16px; max-width: 320px; margin: 0 auto; }
+                    .slip-title { text-align: center; font-weight: bold; font-size: 14px; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+                    .slip-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px; }
+                    .slip-total { border-top: 2px dashed #000; padding-top: 6px; font-weight: bold; font-size: 13px; margin-top: 8px; }
+                </style>
+            </head>
+            <body>
+                <div class="slip-box">
+                    <div class="slip-title">TB NUSANTARA<br><small style="font-size:9px;">SLIP GAJI KARYAWAN</small></div>
+                    <div class="slip-row"><span>Periode:</span> <span>${document.getElementById('tglMulai').value} - ${document.getElementById('tglSelesai').value}</span></div>
+                    <div class="slip-row"><span>Nama:</span> <span><strong>${k.nama}</strong></span></div>
+                    <hr style="border-top:1px dashed #000; margin:6px 0;">
+                    <div class="slip-row"><span>Gaji Pokok (${totalHadirHari} hr):</span> <span>${formatRupiah(totalGajiPokok)}</span></div>
+                    <div class="slip-row"><span>Lembur (${totalJamLembur} jam):</span> <span>+${formatRupiah(totalUangLembur)}</span></div>
+                    <div class="slip-row"><span>Telat (${totalJamTelat} jam):</span> <span>-${formatRupiah(totalPotonganTelat)}</span></div>
+                    <div class="slip-row"><span>Bonus:</span> <span>+${formatRupiah(k.bonus || 0)}</span></div>
+                    <div class="slip-row"><span>Kasbon:</span> <span>-${formatRupiah(k.kasbon || 0)}</span></div>
+                    <div class="slip-row slip-total"><span>TOTAL GAJI:</span> <span>${formatRupiah(totalGajiAkhir)}</span></div>
+                    <br><br>
+                    <div class="slip-row" style="text-align:center; display:block;">
+                        <p>Diterima Oleh,</p><br><br>
+                        <p>( ${k.nama} )</p>
+                    </div>
                 </div>
-            </div>
-        `;
-
-        window.print();
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        window.close();
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
     }
 
-    function resetMinggu(denganArsip) {
+    function resetMinggu() {
         if (!verifikasiPin()) return;
 
-        let instruksi = denganArsip ? "Selesaikan & Arsipkan data ke Cloud sebelum reset?" : "Reset absensi minggu ini TANPA mengarsipkan?";
-        if (confirm(instruksi)) {
-            if (denganArsip) {
-                simpanDataKeCloud(true);
-            }
-            
+        if (confirm("Reset seluruh data absensi, bonus, dan kasbon untuk minggu ini?")) {
             dataKaryawan.forEach(k => {
                 k.bonus = 0;
                 k.kasbon = 0;
+                k.lastModified = Date.now();
                 HARI.forEach(h => {
                     k.absensi[h] = { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 };
                 });
             });
-
-            setTimeout(() => simpanDataKeCloud(false), 500);
+            simpanDataLocal();
         }
     }
 
@@ -840,7 +873,7 @@
         if (!verifikasiPin()) return;
         if (confirm('Kembalikan ke daftar karyawan default?')) {
             dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-            simpanDataKeCloud();
+            simpanDataLocal();
         }
     }
 
@@ -921,7 +954,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         updatePeriodeTanggal();
-        muatDataDariCloud();
+        renderTabel();
     });
 </script>
 </body>
