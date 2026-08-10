@@ -310,7 +310,7 @@
         </div>
         <div class="header-badges">
             <span id="syncStatus" class="sync-status sync-idle">☁️ Menghubungkan...</span>
-            <span class="badge-v15">V15.2 PRO</span>
+            <span class="badge-v15">V15.3 FIX</span>
         </div>
     </div>
 
@@ -391,7 +391,7 @@
         </div>
 
         <div style="display: flex; gap: 8px; flex-direction: column; margin-top: 15px;">
-            <button class="btn btn-primary" onclick="muatDataDariCloud(true)">🔄 Sinkronkan Data Terbaru</button>
+            <button class="btn btn-primary" onclick="muatDataDariCloud(true)">🔄 Ambil Data Terakhir Dari Cloud</button>
             <button class="btn btn-warning" onclick="resetMinggu(true)">📦 Arsipkan & Reset Absensi Minggu Ini</button>
             <button class="btn btn-danger" onclick="resetMinggu(false)">⚠️ Reset Absensi Tanpa Arsip</button>
             <button class="btn btn-secondary" onclick="resetSemuaKeDefault()">⚙️ Reset Ke Karyawan Default</button>
@@ -411,6 +411,9 @@
         { nama: 'Tomas', gajiPokok: 75000 },
         { nama: 'Kang To', gajiPokok: 85000 }
     ];
+
+    let dataKaryawan = [];
+    let timerDebounce;
 
     function setStatusSync(status, pesan) {
         const el = document.getElementById('syncStatus');
@@ -444,8 +447,7 @@
         };
     }
 
-    let dataKaryawan = [];
-
+    // Tanggal Awal
     let tglMulaiSaved = localStorage.getItem('tglMulaiAbsensiV13');
     if (!tglMulaiSaved) {
         let hariIni = new Date();
@@ -456,9 +458,27 @@
     }
     document.getElementById('tglMulai').value = tglMulaiSaved;
 
+    // FUNGSI UTAMA: Inisialisasi awal membaca LocalStorage dulu agar TIDAK HILANG
+    function inisialisasiDataAwal() {
+        const localData = localStorage.getItem('dataKaryawanAbsensiV13');
+        if (localData) {
+            try {
+                dataKaryawan = JSON.parse(localData);
+                renderTabel();
+                setStatusSync('success', '📱 Data Lokal Siap');
+            } catch(e) {
+                dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
+                simpanDataKeCloud();
+            }
+        } else {
+            // Jika benar-benar pertama kali, ambil dari Cloud
+            muatDataDariCloud(false);
+        }
+    }
+
     async function muatDataDariCloud(konfirmasi = false) {
         if (konfirmasi) {
-            let yakin = confirm("Sinkronisasi akan mengambil data dari server Cloud. Pastikan semua perubahan sudah tersimpan. Lanjutkan?");
+            let yakin = confirm("Perhatian: Mengambil data dari cloud akan menimpa perubahan centang lokal Anda jika belum terkirim. Lanjutkan?");
             if (!yakin) return;
         }
 
@@ -469,25 +489,28 @@
             
             if (Array.isArray(data) && data.length > 0) {
                 dataKaryawan = data;
-            } else {
+                localStorage.setItem('dataKaryawanAbsensiV13', JSON.stringify(dataKaryawan));
+                renderTabel();
+                setStatusSync('success', '☁️ Tersinkron Cloud');
+            } else if (!konfirmasi && dataKaryawan.length === 0) {
                 dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
                 simpanDataKeCloud();
             }
-            setStatusSync('success', '☁️ Tersinkronisasi');
-            renderTabel();
         } catch (err) {
             console.error(err);
-            setStatusSync('error', '❌ Offline / Gagal Cloud');
-            dataKaryawan = JSON.parse(localStorage.getItem('dataKaryawanAbsensiV13')) || DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-            renderTabel();
+            setStatusSync('error', '❌ Gagal Cloud (Pakai Lokal)');
         }
     }
 
-    let timerDebounce;
+    // FUNGSI SIMPAN: Langsung ke LocalStorage (Instan) + Async ke Cloud
     function simpanDataKeCloud(arsip = false) {
+        // 1. Simpan detik ini juga ke LocalStorage (Cegah Hilang saat Refresh)
         localStorage.setItem('dataKaryawanAbsensiV13', JSON.stringify(dataKaryawan));
+        
+        // 2. Tampilkan di layar langsung tanpa reset posisi
         renderTabel();
 
+        // 3. Kirim ke Server Cloud secara Background
         setStatusSync('loading', '⏳ Menyimpan...');
         clearTimeout(timerDebounce);
 
@@ -505,10 +528,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                setStatusSync('success', arsip ? '📦 Berhasil Diarsipkan' : '☁️ Tersimpan di Cloud');
+                setStatusSync('success', arsip ? '📦 Diarsipkan' : '☁️ Tersimpan di Cloud');
             } catch (err) {
                 console.error(err);
-                setStatusSync('error', '❌ Gagal Simpan Cloud');
+                setStatusSync('error', '⚠️ Tersimpan Lokal (Gagal Cloud)');
             }
         }, 800);
     }
@@ -589,7 +612,7 @@
     }
 
     function renderTabel() {
-        // PERBAIKAN: Simpan posisi scroll sebelum render ulang
+        // Trik Menjaga Posisi Scroll Saat Render
         const scrollTopLayar = window.pageYOffset || document.documentElement.scrollTop;
 
         const desktopBody = document.getElementById('bodyTabelDesktop');
@@ -628,7 +651,7 @@
 
             grandTotalGajiSemua += totalGajiAkhir;
 
-            // RENDER DESKTOP
+            // DESKTOP HTML
             let rowHtml = `
                 <tr>
                     <td><strong>${k.nama}</strong></td>
@@ -680,7 +703,7 @@
             `;
             desktopBody.innerHTML += rowHtml;
 
-            // RENDER MOBILE
+            // MOBILE HTML
             let cardHtml = `
                 <div class="karyawan-card">
                     <div class="karyawan-card-header">
@@ -749,7 +772,7 @@
 
         document.getElementById('grandTotalGaji').innerText = formatRupiah(grandTotalGajiSemua);
 
-        // PERBAIKAN: Kembalikan posisi scroll ke tempat semula
+        // Kembalikan Posisi Scroll
         window.scrollTo(0, scrollTopLayar);
     }
 
@@ -781,39 +804,11 @@
                 <title>Slip Gaji - ${k.nama}</title>
                 <style>
                     @page { size: auto; margin: 0; }
-                    body {
-                        font-family: monospace;
-                        padding: 20px;
-                        margin: 0;
-                        background: #fff;
-                    }
-                    .slip-box {
-                        border: 2px solid #000;
-                        padding: 16px;
-                        max-width: 320px;
-                        margin: 0 auto;
-                    }
-                    .slip-title { 
-                        text-align: center; 
-                        font-weight: bold; 
-                        font-size: 14px; 
-                        border-bottom: 2px dashed #000; 
-                        padding-bottom: 8px; 
-                        margin-bottom: 8px; 
-                    }
-                    .slip-row { 
-                        display: flex; 
-                        justify-content: space-between; 
-                        margin-bottom: 4px; 
-                        font-size: 11px; 
-                    }
-                    .slip-total { 
-                        border-top: 2px dashed #000; 
-                        padding-top: 6px; 
-                        font-weight: bold; 
-                        font-size: 13px; 
-                        margin-top: 8px; 
-                    }
+                    body { font-family: monospace; padding: 20px; margin: 0; background: #fff; }
+                    .slip-box { border: 2px solid #000; padding: 16px; max-width: 320px; margin: 0 auto; }
+                    .slip-title { text-align: center; font-weight: bold; font-size: 14px; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+                    .slip-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px; }
+                    .slip-total { border-top: 2px dashed #000; padding-top: 6px; font-weight: bold; font-size: 13px; margin-top: 8px; }
                 </style>
             </head>
             <body>
@@ -951,9 +946,10 @@
         XLSX.writeFile(wb, namaFile);
     }
 
+    // PENTING: Baca data lokal terlebih dahulu saat browser dibuka/di-refresh
     window.addEventListener('DOMContentLoaded', () => {
         updatePeriodeTanggal();
-        muatDataDariCloud();
+        inisialisasiDataAwal();
     });
 </script>
 </body>
