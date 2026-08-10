@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TB Nusantara Building Material - Absensi & Slip Gaji V15</title>
+    <title>TB Nusantara Building Material - Absensi Pure Cloud</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -51,8 +51,8 @@
         .brand-title h1 { font-size: 18px; color: var(--primary); font-weight: 800; }
         .brand-title p { font-size: 11px; color: #64748b; font-weight: 600; }
 
-        .badge-v15 {
-            background-color: var(--success);
+        .badge-cloud {
+            background-color: var(--accent);
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
@@ -133,22 +133,27 @@
 
         .sync-status {
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             color: #64748b;
             display: flex;
             align-items: center;
             gap: 6px;
             margin-bottom: 10px;
+            padding: 6px 10px;
+            background: #f8fafc;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
         }
 
         .sync-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background-color: #94a3b8;
         }
         .sync-dot.active { background-color: var(--success); }
         .sync-dot.loading { background-color: var(--warning); }
+        .sync-dot.error { background-color: var(--danger); }
 
         .desktop-table-container {
             display: block;
@@ -311,14 +316,14 @@
             <p>BUILDING MATERIAL — ABSENSI & GAJI</p>
         </div>
         <div>
-            <span class="badge-v15">V15 AUTO-SYNC</span>
+            <span class="badge-cloud">☁️ PURE CLOUD SYNC</span>
         </div>
     </div>
 
-    <!-- Status & Tombol Sinkronisasi -->
+    <!-- Indicator Sync -->
     <div class="sync-status">
         <div class="sync-dot" id="syncDot"></div>
-        <span id="syncText">Status: Tersimpan Lokal</span>
+        <span id="syncText">Memuat data dari Google Sheets...</span>
     </div>
 
     <!-- Periode Tanggal -->
@@ -334,7 +339,7 @@
                 <input type="date" id="tglSelesai" readonly style="background-color: #e2e8f0;">
             </div>
             <div class="form-group-item">
-                <button class="btn btn-primary" onclick="paksaSinkronisasiCloud()">🔄 Sinkronisasi Cloud</button>
+                <button class="btn btn-primary" onclick="muatDataDariCloud()">🔄 Muat Ulang Data Cloud</button>
             </div>
             <div class="form-group-item">
                 <button class="btn btn-excel" onclick="exportKeExcel()">📊 Export Excel</button>
@@ -364,7 +369,7 @@
 
         <!-- DESKTOP TABLE -->
         <div class="desktop-table-container">
-            <table id="tabelAbsensi">
+            <table>
                 <thead>
                     <tr>
                         <th rowspan="2" style="width: 120px;">Nama</th>
@@ -408,8 +413,8 @@
 </div>
 
 <script>
-    // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz66jIqfIOU-kEle5hriAjDU749i-AFUPzRQM1Bj-tcQaHOi75UPbAW_ElMsMEPagi6Qg/exec";
+    // MASUKKAN URL GOOGLE APPS SCRIPT DARI DEPLOYMENT ANDA DI SINI
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzm9ksW3q9JvYwvhPCWpCargR4QDkHyK3hDeg_wlS0QRFzLMvXhcamFrW_4qSN-d9SSbw/exec";
     
     const PIN_ADMIN = "1234";
     const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
@@ -421,13 +426,14 @@
         { nama: 'Kang To', gajiPokok: 85000 }
     ];
 
-    let timerDebounce = null;
+    let dataKaryawan = [];
+    let timerSave = null;
 
     function setStatusSync(type, text) {
         const dot = document.getElementById('syncDot');
         const txt = document.getElementById('syncText');
         dot.className = 'sync-dot ' + type;
-        txt.innerText = 'Status: ' + text;
+        txt.innerText = text;
     }
 
     function verifikasiPin() {
@@ -452,46 +458,49 @@
                 sabtu: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 }
             },
             bonus: 0,
-            kasbon: 0,
-            lastModified: Date.now()
+            kasbon: 0
         };
     }
 
-    let dataKaryawan = JSON.parse(localStorage.getItem('dataKaryawanAbsensiV15'));
-    if (!dataKaryawan || dataKaryawan.length === 0) {
-        dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-        simpanDataLocal();
+    // MEMUAT DATA DARI CLOUD SAAT HALAMAN DIBUKA / DI-REFRESH
+    async function muatDataDariCloud() {
+        if (!SCRIPT_URL || SCRIPT_URL.includes("GANTI_DENGAN_URL")) {
+            setStatusSync('error', 'Error: URL Google Script belum terpasang!');
+            return;
+        }
+
+        setStatusSync('loading', 'Mengambil data dari Google Sheets...');
+        try {
+            const res = await fetch(SCRIPT_URL);
+            const cloudData = await res.json();
+
+            if (Array.isArray(cloudData) && cloudData.length > 0) {
+                dataKaryawan = cloudData;
+            } else {
+                // Jika Google Sheets masih kosong, inisialisasi default karyawan
+                dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
+                await simpanDataKeCloudDirect();
+            }
+
+            setStatusSync('active', 'Terhubung & Sinkron dengan Cloud');
+            renderTabel();
+        } catch (e) {
+            setStatusSync('error', 'Gagal memuat data dari Cloud. Periksa koneksi internet!');
+        }
     }
 
-    let tglMulaiSaved = localStorage.getItem('tglMulaiAbsensiV15');
-    if (!tglMulaiSaved) {
-        let hariIni = new Date();
-        let selisihKeMinggu = hariIni.getDay();
-        let tglMinggu = new Date(hariIni);
-        tglMinggu.setDate(hariIni.getDate() - selisihKeMinggu);
-        tglMulaiSaved = tglMinggu.toISOString().split('T')[0];
-    }
-    document.getElementById('tglMulai').value = tglMulaiSaved;
-
-    // SIMPAN LOKAL DETIK ITU JUGA
-    function simpanDataLocal() {
-        localStorage.setItem('dataKaryawanAbsensiV15', JSON.stringify(dataKaryawan));
+    // PEMICU AUTO-SAVE KE CLOUD (DENGAN TIMEOUT UNTUK MENCEGAH TERLALU BANYAK REQUEST)
+    function pemicuAutoSave() {
         renderTabel();
-        pemicuAutoSync();
+        setStatusSync('loading', 'Menyimpan ke Google Sheets...');
+        clearTimeout(timerSave);
+        timerSave = setTimeout(() => {
+            simpanDataKeCloudDirect();
+        }, 1000);
     }
 
-    // AUTO SYNC DENGAN DEBOUNCE
-    function pemicuAutoSync() {
-        if (!SCRIPT_URL || SCRIPT_URL.includes("GANTI_DENGAN_URL")) return;
-        
-        setStatusSync('loading', 'Menyimpan perubahan ke cloud...');
-        clearTimeout(timerDebounce);
-        timerDebounce = setTimeout(() => {
-            kirimDataKeCloud();
-        }, 1500);
-    }
-
-    async function kirimDataKeCloud() {
+    // LANGSUNG KIRIM KE GOOGLE SHEETS
+    async function simpanDataKeCloudDirect() {
         try {
             await fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -499,63 +508,25 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataKaryawan)
             });
-            setStatusSync('active', 'Tersimpan & Terhubung ke Cloud');
+            setStatusSync('active', 'Tersimpan Otomatis ke Google Sheets');
         } catch (e) {
-            setStatusSync('', 'Tersimpan Lokal (Gagal Cloud)');
+            setStatusSync('error', 'Gagal menyimpan perubahan ke Cloud!');
         }
     }
 
-    // SINKRONISASI MANUSIAL DENGAN MERGE AMAN (DATA TIDAK HILANG)
-    async function paksaSinkronisasiCloud() {
-        if (!SCRIPT_URL || SCRIPT_URL.includes("GANTI_DENGAN_URL")) {
-            alert("Harap masukkan SCRIPT_URL Google Apps Script Anda terlebih dahulu!");
-            return;
-        }
-
-        setStatusSync('loading', 'Menyingkronkan data...');
-        try {
-            const res = await fetch(SCRIPT_URL);
-            const cloudData = await res.json();
-
-            if (Array.isArray(cloudData) && cloudData.length > 0) {
-                // Merge data: Ambil versi terbaru berdasarkan ID atau gabungkan karyawan baru
-                let mapData = new Map();
-                
-                // Tambahkan data dari cloud dulu
-                cloudData.forEach(k => mapData.set(k.id, k));
-
-                // Timpa dengan data lokal jika lokal lebih baru
-                dataKaryawan.forEach(kLokal => {
-                    if (!mapData.has(kLokal.id)) {
-                        mapData.set(kLokal.id, kLokal);
-                    } else {
-                        let kCloud = mapData.get(kLokal.id);
-                        if ((kLokal.lastModified || 0) >= (kCloud.lastModified || 0)) {
-                            mapData.set(kLokal.id, kLokal);
-                        }
-                    }
-                });
-
-                dataKaryawan = Array.from(mapData.values());
-                localStorage.setItem('dataKaryawanAbsensiV15', JSON.stringify(dataKaryawan));
-                renderTabel();
-                await kirimDataKeCloud();
-                alert("Sinkronisasi Berhasil! Data lokal dan cloud telah terintegrasi.");
-            } else {
-                await kirimDataKeCloud();
-                alert("Data lokal berhasil dikirimkan ke cloud.");
-            }
-        } catch (e) {
-            alert("Gagal terhubung ke Google Cloud. Memakai data lokal.");
-            setStatusSync('', 'Tersimpan Lokal');
-        }
+    function initPeriodeTanggal() {
+        let hariIni = new Date();
+        let selisihKeMinggu = hariIni.getDay();
+        let tglMinggu = new Date(hariIni);
+        tglMinggu.setDate(hariIni.getDate() - selisihKeMinggu);
+        document.getElementById('tglMulai').value = tglMinggu.toISOString().split('T')[0];
+        updatePeriodeTanggal();
     }
 
     function updatePeriodeTanggal() {
         let tglMulaiInput = document.getElementById('tglMulai').value;
         if (!tglMulaiInput) return;
 
-        localStorage.setItem('tglMulaiAbsensiV15', tglMulaiInput);
         let startDate = new Date(tglMulaiInput);
 
         HARI.forEach((h, index) => {
@@ -570,7 +541,6 @@
                 document.getElementById('tglSelesai').value = currentDate.toISOString().split('T')[0];
             }
         });
-        renderTabel();
     }
 
     function tambahKaryawan() {
@@ -586,19 +556,18 @@
         dataKaryawan.push(karyawanBaru);
         namaInput.value = '';
         gajiInput.value = '';
-        simpanDataLocal();
+        pemicuAutoSave();
     }
 
     function hapusKaryawan(id) {
         if (!verifikasiPin()) return;
         dataKaryawan = dataKaryawan.filter(k => k.id !== id);
-        simpanDataLocal();
+        pemicuAutoSave();
     }
 
     function updateAbsensi(id, hari, field, value) {
         const karyawan = dataKaryawan.find(k => k.id === id);
         if (karyawan) {
-            karyawan.lastModified = Date.now();
             if (field === 'hadir') {
                 karyawan.absensi[hari].hadir = value;
                 if (!value) {
@@ -611,16 +580,15 @@
             } else {
                 karyawan.absensi[hari][field] = parseFloat(value) || 0;
             }
-            simpanDataLocal();
+            pemicuAutoSave();
         }
     }
 
     function updateNilaiLain(id, field, value) {
         const karyawan = dataKaryawan.find(k => k.id === id);
         if (karyawan) {
-            karyawan.lastModified = Date.now();
             karyawan[field] = parseFloat(value) || 0;
-            simpanDataLocal();
+            pemicuAutoSave();
         }
     }
 
@@ -636,7 +604,7 @@
         mobileContainer.innerHTML = '';
 
         if (dataKaryawan.length === 0) {
-            desktopBody.innerHTML = '<tr><td colspan="16">Belum ada data karyawan.</td></tr>';
+            desktopBody.innerHTML = '<tr><td colspan="16">Belum ada data karyawan di Cloud.</td></tr>';
             mobileContainer.innerHTML = '<div style="text-align:center; padding:15px;">Belum ada data karyawan.</div>';
             document.getElementById('grandTotalGaji').innerText = formatRupiah(0);
             return;
@@ -856,24 +824,23 @@
     function resetMinggu() {
         if (!verifikasiPin()) return;
 
-        if (confirm("Reset seluruh data absensi, bonus, dan kasbon untuk minggu ini?")) {
+        if (confirm("Reset seluruh data absensi, bonus, dan kasbon untuk minggu ini di Cloud?")) {
             dataKaryawan.forEach(k => {
                 k.bonus = 0;
                 k.kasbon = 0;
-                k.lastModified = Date.now();
                 HARI.forEach(h => {
                     k.absensi[h] = { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 };
                 });
             });
-            simpanDataLocal();
+            pemicuAutoSave();
         }
     }
 
     function resetSemuaKeDefault() {
         if (!verifikasiPin()) return;
-        if (confirm('Kembalikan ke daftar karyawan default?')) {
+        if (confirm('Kembalikan ke daftar karyawan default di Cloud?')) {
             dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
-            simpanDataLocal();
+            pemicuAutoSave();
         }
     }
 
@@ -953,8 +920,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-        updatePeriodeTanggal();
-        renderTabel();
+        initPeriodeTanggal();
+        muatDataDariCloud();
     });
 </script>
 </body>
