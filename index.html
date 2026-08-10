@@ -310,7 +310,7 @@
         </div>
         <div class="header-badges">
             <span id="syncStatus" class="sync-status sync-idle">☁️ Menghubungkan...</span>
-            <span class="badge-v15">V15.1 PRO</span>
+            <span class="badge-v15">V15.2 PRO</span>
         </div>
     </div>
 
@@ -391,7 +391,7 @@
         </div>
 
         <div style="display: flex; gap: 8px; flex-direction: column; margin-top: 15px;">
-            <button class="btn btn-primary" onclick="muatDataDariCloud()">🔄 Sinkronkan Data Terbaru</button>
+            <button class="btn btn-primary" onclick="muatDataDariCloud(true)">🔄 Sinkronkan Data Terbaru</button>
             <button class="btn btn-warning" onclick="resetMinggu(true)">📦 Arsipkan & Reset Absensi Minggu Ini</button>
             <button class="btn btn-danger" onclick="resetMinggu(false)">⚠️ Reset Absensi Tanpa Arsip</button>
             <button class="btn btn-secondary" onclick="resetSemuaKeDefault()">⚙️ Reset Ke Karyawan Default</button>
@@ -456,7 +456,12 @@
     }
     document.getElementById('tglMulai').value = tglMulaiSaved;
 
-    async function muatDataDariCloud() {
+    async function muatDataDariCloud(konfirmasi = false) {
+        if (konfirmasi) {
+            let yakin = confirm("Sinkronisasi akan mengambil data dari server Cloud. Pastikan semua perubahan sudah tersimpan. Lanjutkan?");
+            if (!yakin) return;
+        }
+
         setStatusSync('loading', '🔄 Memuat Cloud...');
         try {
             const res = await fetch(API_URL);
@@ -584,6 +589,9 @@
     }
 
     function renderTabel() {
+        // PERBAIKAN: Simpan posisi scroll sebelum render ulang
+        const scrollTopLayar = window.pageYOffset || document.documentElement.scrollTop;
+
         const desktopBody = document.getElementById('bodyTabelDesktop');
         const mobileContainer = document.getElementById('mobileCardsContainer');
         
@@ -740,9 +748,11 @@
         });
 
         document.getElementById('grandTotalGaji').innerText = formatRupiah(grandTotalGajiSemua);
+
+        // PERBAIKAN: Kembalikan posisi scroll ke tempat semula
+        window.scrollTo(0, scrollTopLayar);
     }
 
-    // FUNGSI CETAK SLIP GAJI TERISOLASI (FIX 1 HALAMAN)
     function cetakSlipGaji(id) {
         const k = dataKaryawan.find(item => item.id === id);
         if (!k) return;
