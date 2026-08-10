@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TB Nusantara Building Material - Absensi Mobile & ½ Hari</title>
+    <!-- Library SheetJS untuk Export ke Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --primary-light: #334155;
+            --accent: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --excel: #15803d;
+            --bg-body: #f1f5f9;
+            --border-color: #cbd5e1;
+            --half-day-color: #d97706;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: #1e293b;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+
+        .brand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .brand-title h1 {
+            font-size: 18px;
+            color: var(--primary);
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-title p {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .badge-v11 {
+            background-color: var(--primary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .card-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Perbaikan Layout Grid Responsif */
+        .periode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .form-group-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        input[type="text"], input[type="number"], input[type="date"] {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            outline: none;
+            font-size: 13px;
+            width: 100%;
+            height: 36px;
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        .btn {
+            height: 36px;
+            padding: 0 12px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: white;
+            transition: opacity 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background-color: var(--accent); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-excel { background-color: var(--excel); }
+        .btn-secondary { background-color: #64748b; }
+
+        .desktop-table-container {
+            display: block;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1250px;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 6px 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        .day-header { background-color: var(--primary-light); }
+        .sub-date { display: block; font-size: 10px; color: #cbd5e1; font-weight: normal; }
+
+        .day-cell { min-width: 105px; background-color: #f8fafc; }
+        .day-inputs { display: flex; flex-direction: column; gap: 4px; padding: 2px; }
+
+        .check-hadir {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            background: #ffffff;
+            padding: 3px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+        }
+
+        .check-half-day {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--half-day-color);
+            background: #fffbe3;
+            padding: 2px;
+            border: 1px dashed var(--half-day-color);
+            border-radius: 3px;
+        }
+
+        .time-input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: #475569;
+        }
+
+        .time-input-group input {
+            width: 45px;
+            height: 24px;
+            padding: 2px;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .summary-cell {
+            font-weight: 700;
+            background-color: #f0fdf4;
+            color: #15803d;
+            white-space: nowrap;
+        }
+
+        .bonus-input { width: 75px; height: 28px; text-align: right; }
+
+        .total-gaji-box {
+            background-color: var(--success);
+            color: white;
+            font-size: 14px;
+            font-weight: 800;
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Mobile Card View */
+        .mobile-cards-container { display: none; }
+
+        .karyawan-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            background-color: white;
+            overflow: hidden;
+        }
+
+        .karyawan-card-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .karyawan-card-body { padding: 10px; }
+
+        .mobile-day-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .mobile-day-box {
+            border: 1px solid #e2e8f0;
+            padding: 6px;
+            border-radius: 4px;
+            background-color: #f8fafc;
+        }
+
+        .mobile-day-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 3px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mobile-summary-box {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            padding: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            font-size: 11px;
+        }
+
+        @media (max-width: 850px) {
+            .desktop-table-container { display: none; }
+            .mobile-cards-container { display: block; }
+            .container { padding: 10px; }
+            body { padding: 6px; }
+        }
+
+        .footer-action {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .note-text { font-style: italic; color: #64748b; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="brand-header">
+        <div class="brand-title">
+            <h1>TB NUSANTARA</h1>
+            <p>BUILDING MATERIAL — ABSENSI & GAJI</p>
+        </div>
+        <span class="badge-v11">V11 FIX LAYOUT</span>
+    </div>
+
+    <!-- Periode Tanggal (Diselaraskan dengan CSS Grid) -->
+    <div class="card" style="background-color: #f0f9ff; border-color: #bae6fd;">
+        <div class="card-header" style="color: #0369a1;">
+            📅 PERIODE TANGGAL ABSENSI
+        </div>
+        <div class="periode-grid">
+            <div class="form-group-item">
+                <label for="tglMulai">Tanggal Mulai (Minggu):</label>
+                <input type="date" id="tglMulai" onchange="updatePeriodeTanggal()">
+            </div>
+            <div class="form-group-item">
+                <label for="tglSelesai">Tanggal Selesai (Sabtu):</label>
+                <input type="date" id="tglSelesai" readonly style="background-color: #e2e8f0;">
+            </div>
+            <div class="form-group-item">
+                <button class="btn btn-excel" onclick="exportKeExcel()">📊 Export Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tambah Karyawan -->
+    <div class="card">
+        <div class="card-header">
+            👤 TAMBAH KARYAWAN
+        </div>
+        <div class="form-row">
+            <div class="form-group-item">
+                <input type="text" id="namaKaryawan" placeholder="Nama Karyawan" required>
+            </div>
+            <div class="form-group-item">
+                <input type="number" id="gajiPokok" placeholder="Gaji Pokok / Hari (Rp)" required>
+            </div>
+            <div class="form-group-item" style="flex: 0 0 auto;">
+                <button class="btn btn-primary" onclick="tambahKaryawan()">+ Tambah</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Rekap -->
+    <div class="card">
+        <div class="card-header">
+            📋 REKAP ABSENSI & GAJI
+        </div>
+
+        <!-- TAMPILAN DESKTOP -->
+        <div class="desktop-table-container">
+            <table id="tabelAbsensi">
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="width: 130px;">Nama</th>
+                        <th rowspan="2" style="width: 95px;">Gaji / Hari</th>
+                        <th colspan="7">Hari Kerja</th>
+                        <th rowspan="2" style="width: 70px;">Total Hadir</th>
+                        <th rowspan="2" style="width: 95px;">Lembur (+20rb)</th>
+                        <th rowspan="2" style="width: 95px;">Telat (-10rb)</th>
+                        <th rowspan="2" style="width: 80px;">Bonus</th>
+                        <th rowspan="2" style="width: 110px;">Total Gaji</th>
+                        <th rowspan="2" style="width: 50px;">Aksi</th>
+                    </tr>
+                    <tr class="day-header">
+                        <th>Minggu <span class="sub-date" id="date-minggu">-</span></th>
+                        <th>Senin <span class="sub-date" id="date-senin">-</span></th>
+                        <th>Selasa <span class="sub-date" id="date-selasa">-</span></th>
+                        <th>Rabu <span class="sub-date" id="date-rabu">-</span></th>
+                        <th>Kamis <span class="sub-date" id="date-kamis">-</span></th>
+                        <th>Jumat <span class="sub-date" id="date-jumat">-</span></th>
+                        <th>Sabtu <span class="sub-date" id="date-sabtu">-</span></th>
+                    </tr>
+                </thead>
+                <tbody id="bodyTabelDesktop"></tbody>
+            </table>
+        </div>
+
+        <!-- TAMPILAN MOBILE -->
+        <div class="mobile-cards-container" id="mobileCardsContainer"></div>
+
+        <!-- Total Keseluruhan -->
+        <div style="margin-top: 12px;" class="total-gaji-box">
+            <span>GRAND TOTAL GAJI: </span>
+            <span id="grandTotalGaji">Rp 0</span>
+        </div>
+
+        <div class="footer-action">
+            <div style="display: flex; gap: 8px; flex-direction: column; width: 100%;">
+                <button class="btn btn-danger" onclick="resetMinggu()">🔄 Reset Absensi Minggu Ini</button>
+                <button class="btn btn-secondary" onclick="resetSemuaKeDefault()">⚙️ Reset Ke Karyawan Default</button>
+            </div>
+            <div class="note-text" style="margin-top: 8px;">
+                * Setengah Hari (½ Hari) akan menghitung gaji harian sebesar 50%.<br>
+                * Total Gaji = (Jumlah Hari Hadir × Gaji Harian) + (Lembur × 20rb) - (Telat × 10rb) + Bonus.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+
+    const DEFAULT_KARYAWAN = [
+        { nama: 'Lucky', gajiPokok: 75000 },
+        { nama: 'Kang Gendut', gajiPokok: 85000 },
+        { nama: 'Kang Kempis', gajiPokok: 75000 },
+        { nama: 'Tomas', gajiPokok: 75000 },
+        { nama: 'Kang To', gajiPokok: 85000 }
+    ];
+
+    function buatStrukturKaryawan(nama, gaji) {
+        return {
+            id: Date.now() + Math.random(),
+            nama: nama,
+            gajiPokok: parseFloat(gaji),
+            absensi: {
+                minggu: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 },
+                senin: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 },
+                selasa: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 },
+                rabu: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 },
+                kamis: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 },
+                jumat: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 },
+                sabtu: { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 }
+            },
+            bonus: 0
+        };
+    }
+
+    let dataKaryawan = JSON.parse(localStorage.getItem('dataKaryawanAbsensiV11'));
+
+    if (!dataKaryawan || dataKaryawan.length === 0) {
+        dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
+        localStorage.setItem('dataKaryawanAbsensiV11', JSON.stringify(dataKaryawan));
+    }
+
+    let tglMulaiSaved = localStorage.getItem('tglMulaiAbsensiV11');
+    if (!tglMulaiSaved) {
+        let hariIni = new Date();
+        let selisihKeMinggu = hariIni.getDay();
+        let tglMinggu = new Date(hariIni);
+        tglMinggu.setDate(hariIni.getDate() - selisihKeMinggu);
+        tglMulaiSaved = tglMinggu.toISOString().split('T')[0];
+    }
+    document.getElementById('tglMulai').value = tglMulaiSaved;
+
+    function updatePeriodeTanggal() {
+        let tglMulaiInput = document.getElementById('tglMulai').value;
+        if (!tglMulaiInput) return;
+
+        localStorage.setItem('tglMulaiAbsensiV11', tglMulaiInput);
+        let startDate = new Date(tglMulaiInput);
+
+        HARI.forEach((h, index) => {
+            let currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + index);
+            
+            let formatTgl = currentDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            let elDesktop = document.getElementById(`date-${h}`);
+            if(elDesktop) elDesktop.innerText = formatTgl;
+
+            if (index === 6) {
+                document.getElementById('tglSelesai').value = currentDate.toISOString().split('T')[0];
+            }
+        });
+        renderTabel();
+    }
+
+    function simpanData() {
+        localStorage.setItem('dataKaryawanAbsensiV11', JSON.stringify(dataKaryawan));
+        renderTabel();
+    }
+
+    function tambahKaryawan() {
+        const namaInput = document.getElementById('namaKaryawan');
+        const gajiInput = document.getElementById('gajiPokok');
+
+        if (!namaInput.value || !gajiInput.value) {
+            alert('Mohon isi nama dan gaji pokok harian!');
+            return;
+        }
+
+        const karyawanBaru = buatStrukturKaryawan(namaInput.value, gajiInput.value);
+        dataKaryawan.push(karyawanBaru);
+        namaInput.value = '';
+        gajiInput.value = '';
+        simpanData();
+    }
+
+    function hapusKaryawan(id) {
+        if (confirm('Yakin ingin menghapus karyawan ini?')) {
+            dataKaryawan = dataKaryawan.filter(k => k.id !== id);
+            simpanData();
+        }
+    }
+
+    function updateAbsensi(id, hari, field, value) {
+        const karyawan = dataKaryawan.find(k => k.id === id);
+        if (karyawan) {
+            if (field === 'hadir') {
+                karyawan.absensi[hari].hadir = value;
+                if (!value) {
+                    karyawan.absensi[hari].setengahHari = false;
+                    karyawan.absensi[hari].jamLembur = 0;
+                    karyawan.absensi[hari].jamTelat = 0;
+                }
+            } else if (field === 'setengahHari') {
+                karyawan.absensi[hari].setengahHari = value;
+            } else {
+                karyawan.absensi[hari][field] = parseFloat(value) || 0;
+            }
+            simpanData();
+        }
+    }
+
+    function updateBonus(id, value) {
+        const karyawan = dataKaryawan.find(k => k.id === id);
+        if (karyawan) {
+            karyawan.bonus = parseFloat(value) || 0;
+            simpanData();
+        }
+    }
+
+    function formatRupiah(angka) {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+    }
+
+    function renderTabel() {
+        const desktopBody = document.getElementById('bodyTabelDesktop');
+        const mobileContainer = document.getElementById('mobileCardsContainer');
+        
+        desktopBody.innerHTML = '';
+        mobileContainer.innerHTML = '';
+
+        if (dataKaryawan.length === 0) {
+            desktopBody.innerHTML = '<tr><td colspan="15">Belum ada data karyawan.</td></tr>';
+            mobileContainer.innerHTML = '<div style="text-align:center; padding:15px;">Belum ada data karyawan.</div>';
+            document.getElementById('grandTotalGaji').innerText = formatRupiah(0);
+            return;
+        }
+
+        let grandTotalGajiSemua = 0;
+
+        dataKaryawan.forEach(k => {
+            let totalHadirHari = 0;
+            let totalJamLembur = 0;
+            let totalJamTelat = 0;
+
+            HARI.forEach(h => {
+                const abs = k.absensi[h];
+                if (abs.hadir) {
+                    totalHadirHari += abs.setengahHari ? 0.5 : 1;
+                    totalJamLembur += abs.jamLembur || 0;
+                    totalJamTelat += abs.jamTelat || 0;
+                }
+            });
+
+            const totalGajiPokok = totalHadirHari * k.gajiPokok;
+            const totalUangLembur = totalJamLembur * 20000;
+            const totalPotonganTelat = totalJamTelat * 10000;
+            const totalGajiAkhir = totalGajiPokok + totalUangLembur - totalPotonganTelat + (k.bonus || 0);
+
+            grandTotalGajiSemua += totalGajiAkhir;
+
+            // --- 1. RENDER DESKTOP ROW ---
+            let rowHtml = `
+                <tr>
+                    <td><strong>${k.nama}</strong></td>
+                    <td>${formatRupiah(k.gajiPokok)}</td>
+            `;
+
+            HARI.forEach(h => {
+                const abs = k.absensi[h];
+                rowHtml += `
+                    <td class="day-cell">
+                        <div class="day-inputs">
+                            <label class="check-hadir">
+                                <input type="checkbox" ${abs.hadir ? 'checked' : ''} 
+                                    onchange="updateAbsensi(${k.id}, '${h}', 'hadir', this.checked)"> Hadir
+                            </label>
+                            <label class="check-half-day">
+                                <input type="checkbox" ${abs.setengahHari ? 'checked' : ''} ${!abs.hadir ? 'disabled' : ''} 
+                                    onchange="updateAbsensi(${k.id}, '${h}', 'setengahHari', this.checked)"> ½ Hari
+                            </label>
+                            <div class="time-input-group">
+                                <label>Lembur:</label>
+                                <input type="number" min="0" value="${abs.jamLembur || 0}" ${!abs.hadir ? 'disabled' : ''} 
+                                    onchange="updateAbsensi(${k.id}, '${h}', 'jamLembur', this.value)">
+                            </div>
+                            <div class="time-input-group">
+                                <label>Telat:</label>
+                                <input type="number" min="0" value="${abs.jamTelat || 0}" ${!abs.hadir ? 'disabled' : ''} 
+                                    onchange="updateAbsensi(${k.id}, '${h}', 'jamTelat', this.value)">
+                            </div>
+                        </div>
+                    </td>
+                `;
+            });
+
+            rowHtml += `
+                <td><strong>${totalHadirHari}</strong> Hr</td>
+                <td><strong>${totalJamLembur}j</strong><br><small style="color:#16a34a;">+${formatRupiah(totalUangLembur)}</small></td>
+                <td><strong>${totalJamTelat}j</strong><br><small style="color:#dc2626;">-${formatRupiah(totalPotonganTelat)}</small></td>
+                <td>
+                    <input type="number" class="bonus-input" value="${k.bonus || 0}" 
+                        onchange="updateBonus(${k.id}, this.value)" placeholder="0">
+                </td>
+                <td class="summary-cell">${formatRupiah(totalGajiAkhir)}</td>
+                <td>
+                    <button class="btn btn-danger" style="padding: 2px 5px; font-size: 10px; height:auto; width:auto;" onclick="hapusKaryawan(${k.id})">X</button>
+                </td>
+            </tr>
+            `;
+            desktopBody.innerHTML += rowHtml;
+
+            // --- 2. RENDER MOBILE CARD ---
+            let cardHtml = `
+                <div class="karyawan-card">
+                    <div class="karyawan-card-header">
+                        <div>
+                            <strong>${k.nama}</strong> 
+                            <span style="font-size:11px; opacity:0.8;">(${formatRupiah(k.gajiPokok)}/hr)</span>
+                        </div>
+                        <button class="btn btn-danger" style="padding:2px 8px; font-size:10px; width:auto; height:auto;" onclick="hapusKaryawan(${k.id})">Hapus</button>
+                    </div>
+                    <div class="karyawan-card-body">
+                        <div class="mobile-day-grid">
+            `;
+
+            HARI.forEach(h => {
+                const abs = k.absensi[h];
+                let dateSub = document.getElementById(`date-${h}`) ? document.getElementById(`date-${h}`).innerText : '';
+                
+                cardHtml += `
+                    <div class="mobile-day-box">
+                        <div class="mobile-day-title">
+                            <span>${h.toUpperCase()}</span>
+                            <span style="font-weight:normal; color:#64748b;">${dateSub}</span>
+                        </div>
+                        <div class="day-inputs">
+                            <label class="check-hadir">
+                                <input type="checkbox" ${abs.hadir ? 'checked' : ''} 
+                                    onchange="updateAbsensi(${k.id}, '${h}', 'hadir', this.checked)"> Hadir
+                            </label>
+                            <label class="check-half-day">
+                                <input type="checkbox" ${abs.setengahHari ? 'checked' : ''} ${!abs.hadir ? 'disabled' : ''} 
+                                    onchange="updateAbsensi(${k.id}, '${h}', 'setengahHari', this.checked)"> ½ Hari
+                            </label>
+                            <div class="time-input-group">
+                                <label>Lembur:</label>
+                                <input type="number" min="0" value="${abs.jamLembur || 0}" ${!abs.hadir ? 'disabled' : ''} 
+                                    onchange="updateAbsensi(${k.id}, '${h}', 'jamLembur', this.value)">
+                            </div>
+                            <div class="time-input-group">
+                                <label>Telat:</label>
+                                <input type="number" min="0" value="${abs.jamTelat || 0}" ${!abs.hadir ? 'disabled' : ''} 
+                                    onchange="updateAbsensi(${k.id}, '${h}', 'jamTelat', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            cardHtml += `
+                        </div>
+                        <div class="mobile-summary-box">
+                            <div>Hadir: <strong>${totalHadirHari} Hari</strong></div>
+                            <div>Bonus: <input type="number" style="width:70px; padding:2px; height:24px;" value="${k.bonus || 0}" onchange="updateBonus(${k.id}, this.value)"></div>
+                            <div>Lembur: <span style="color:#16a34a;">+${formatRupiah(totalUangLembur)}</span></div>
+                            <div>Telat: <span style="color:#dc2626;">-${formatRupiah(totalPotonganTelat)}</span></div>
+                            <div style="grid-column: span 2; font-size:12px; font-weight:bold; color:#15803d; border-top:1px solid #bbf7d0; padding-top:4px;">
+                                Total Gaji: ${formatRupiah(totalGajiAkhir)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            mobileContainer.innerHTML += cardHtml;
+        });
+
+        document.getElementById('grandTotalGaji').innerText = formatRupiah(grandTotalGajiSemua);
+    }
+
+    function resetMinggu() {
+        if (confirm('Yakin ingin mereset absensi minggu ini? Data karyawan tetap tersimpan.')) {
+            dataKaryawan.forEach(k => {
+                k.bonus = 0;
+                HARI.forEach(h => {
+                    k.absensi[h] = { hadir: false, setengahHari: false, jamLembur: 0, jamTelat: 0 };
+                });
+            });
+            simpanData();
+        }
+    }
+
+    function resetSemuaKeDefault() {
+        if (confirm('Kembalikan ke daftar karyawan default?')) {
+            dataKaryawan = DEFAULT_KARYAWAN.map(k => buatStrukturKaryawan(k.nama, k.gajiPokok));
+            simpanData();
+        }
+    }
+
+    function exportKeExcel() {
+        let tglMulai = document.getElementById('tglMulai').value;
+        let tglSelesai = document.getElementById('tglSelesai').value;
+
+        let exportData = [];
+        exportData.push(["TB NUSANTARA BUILDING MATERIAL - LAPORAN GAJI"]);
+        exportData.push(["Periode Tanggal:", `${tglMulai} s/d ${tglSelesai}`]);
+        exportData.push([]);
+
+        let headers = ["Nama Karyawan", "Gaji Pokok/Hari"];
+        HARI.forEach(h => {
+            let tglKet = document.getElementById(`date-${h}`) ? document.getElementById(`date-${h}`).innerText : '';
+            headers.push(`${h.toUpperCase()} (${tglKet})`);
+        });
+        headers.push("Total Hadir (Hari)", "Jam Lembur", "Uang Lembur (+20rb/j)", "Jam Telat", "Potongan Telat (-10rb/j)", "Bonus", "Total Gaji Akhir");
+        exportData.push(headers);
+
+        let grandTotal = 0;
+
+        dataKaryawan.forEach(k => {
+            let totalHadirHari = 0;
+            let totalLembur = 0;
+            let totalTelat = 0;
+
+            let row = [k.nama, k.gajiPokok];
+
+            HARI.forEach(h => {
+                const abs = k.absensi[h];
+                if (abs.hadir) {
+                    let statusHadir = abs.setengahHari ? "½ Hari" : "Hadir Full";
+                    totalHadirHari += abs.setengahHari ? 0.5 : 1;
+                    totalLembur += abs.jamLembur || 0;
+                    totalTelat += abs.jamTelat || 0;
+                    row.push(`${statusHadir} (Lembur: ${abs.jamLembur}j, Telat: ${abs.jamTelat}j)`);
+                } else {
+                    row.push("Absen");
+                }
+            });
+
+            let uangLembur = totalLembur * 20000;
+            let potTelat = totalTelat * 10000;
+            let totalGaji = (totalHadirHari * k.gajiPokok) + uangLembur - potTelat + (k.bonus || 0);
+            grandTotal += totalGaji;
+
+            row.push(`${totalHadirHari} Hari`, `${totalLembur} Jam`, uangLembur, `${totalTelat} Jam`, potTelat, k.bonus || 0, totalGaji);
+            exportData.push(row);
+        });
+
+        exportData.push([]);
+        exportData.push(["GRAND TOTAL PENGELUARAN GAJI", "", "", "", "", "", "", "", "", "", "", "", "", "", grandTotal]);
+
+        let wb = XLSX.utils.book_new();
+        let ws = XLSX.utils.aoa_to_sheet(exportData);
+        XLSX.utils.book_append_sheet(wb, ws, "Rekap Gaji");
+
+        let namaFile = `TB_Nusantara_Gaji_${tglMulai}_s.d_${tglSelesai}.xlsx`;
+        XLSX.writeFile(wb, namaFile);
+    }
+
+    updatePeriodeTanggal();
+</script>
+
+</body>
+</html>
