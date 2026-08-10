@@ -53,7 +53,7 @@
 
         .header-badges { display: flex; align-items: center; gap: 8px; }
 
-        .badge-v14 {
+        .badge-v15 {
             background-color: var(--accent);
             color: white;
             padding: 4px 8px;
@@ -298,33 +298,6 @@
             .container { padding: 10px; }
             body { padding: 6px; }
         }
-
-        /* Tampilan Area Cetak Slip Gaji */
-        #printableSlip { display: none; }
-
-        @media print {
-            body * { visibility: hidden; }
-            #printableSlip, #printableSlip * { visibility: visible; }
-            #printableSlip {
-                display: block !important;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 20px;
-                background: white;
-            }
-            .slip-box {
-                border: 2px solid #000;
-                padding: 16px;
-                max-width: 400px;
-                margin: 0 auto;
-                font-family: monospace;
-            }
-            .slip-title { text-align: center; font-weight: bold; font-size: 16px; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
-            .slip-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-            .slip-total { border-top: 2px dashed #000; padding-top: 6px; font-weight: bold; font-size: 14px; margin-top: 8px; }
-        }
     </style>
 </head>
 <body>
@@ -337,7 +310,7 @@
         </div>
         <div class="header-badges">
             <span id="syncStatus" class="sync-status sync-idle">☁️ Menghubungkan...</span>
-            <span class="badge-v14">V14 PRO</span>
+            <span class="badge-v15">V15.1 PRO</span>
         </div>
     </div>
 
@@ -426,12 +399,9 @@
     </div>
 </div>
 
-<!-- Area Cetak Slip Gaji (Hidden) -->
-<div id="printableSlip"></div>
-
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbz66jIqfIOU-kEle5hriAjDU749i-AFUPzRQM1Bj-tcQaHOi75UPbAW_ElMsMEPagi6Qg/exec";
-    const PIN_ADMIN = "1234"; // PIN Pengaman Tindakan Kunci
+    const PIN_ADMIN = "1234";
 
     const HARI = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     const DEFAULT_KARYAWAN = [
@@ -772,6 +742,7 @@
         document.getElementById('grandTotalGaji').innerText = formatRupiah(grandTotalGajiSemua);
     }
 
+    // FUNGSI CETAK SLIP GAJI TERISOLASI (FIX 1 HALAMAN)
     function cetakSlipGaji(id) {
         const k = dataKaryawan.find(item => item.id === id);
         if (!k) return;
@@ -791,28 +762,79 @@
         const totalPotonganTelat = totalJamTelat * 10000;
         const totalGajiAkhir = totalGajiPokok + totalUangLembur - totalPotonganTelat + (k.bonus || 0) - (k.kasbon || 0);
 
-        const slipContainer = document.getElementById('printableSlip');
-        slipContainer.innerHTML = `
-            <div class="slip-box">
-                <div class="slip-title">TB NUSANTARA<br><small style="font-size:10px;">SLIP GAJI KARYAWAN</small></div>
-                <div class="slip-row"><span>Periode:</span> <span>${document.getElementById('tglMulai').value} - ${document.getElementById('tglSelesai').value}</span></div>
-                <div class="slip-row"><span>Nama:</span> <span><strong>${k.nama}</strong></span></div>
-                <hr style="border-top:1px dashed #000; margin:6px 0;">
-                <div class="slip-row"><span>Gaji Pokok (${totalHadirHari} hr):</span> <span>${formatRupiah(totalGajiPokok)}</span></div>
-                <div class="slip-row"><span>Lembur (${totalJamLembur} jam):</span> <span>+${formatRupiah(totalUangLembur)}</span></div>
-                <div class="slip-row"><span>Telat (${totalJamTelat} jam):</span> <span>-${formatRupiah(totalPotonganTelat)}</span></div>
-                <div class="slip-row"><span>Bonus:</span> <span>+${formatRupiah(k.bonus || 0)}</span></div>
-                <div class="slip-row"><span>Kasbon:</span> <span>-${formatRupiah(k.kasbon || 0)}</span></div>
-                <div class="slip-row slip-total"><span>TOTAL GAJI DITERIMA:</span> <span>${formatRupiah(totalGajiAkhir)}</span></div>
-                <br><br>
-                <div class="slip-row" style="text-align:center; display:block;">
-                    <p>Diterima Oleh,</p><br><br>
-                    <p>( ${k.nama} )</p>
+        const printWindow = window.open('', '_blank', 'width=450,height=600');
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Slip Gaji - ${k.nama}</title>
+                <style>
+                    @page { size: auto; margin: 0; }
+                    body {
+                        font-family: monospace;
+                        padding: 20px;
+                        margin: 0;
+                        background: #fff;
+                    }
+                    .slip-box {
+                        border: 2px solid #000;
+                        padding: 16px;
+                        max-width: 320px;
+                        margin: 0 auto;
+                    }
+                    .slip-title { 
+                        text-align: center; 
+                        font-weight: bold; 
+                        font-size: 14px; 
+                        border-bottom: 2px dashed #000; 
+                        padding-bottom: 8px; 
+                        margin-bottom: 8px; 
+                    }
+                    .slip-row { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        margin-bottom: 4px; 
+                        font-size: 11px; 
+                    }
+                    .slip-total { 
+                        border-top: 2px dashed #000; 
+                        padding-top: 6px; 
+                        font-weight: bold; 
+                        font-size: 13px; 
+                        margin-top: 8px; 
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="slip-box">
+                    <div class="slip-title">TB NUSANTARA<br><small style="font-size:9px;">SLIP GAJI KARYAWAN</small></div>
+                    <div class="slip-row"><span>Periode:</span> <span>${document.getElementById('tglMulai').value} - ${document.getElementById('tglSelesai').value}</span></div>
+                    <div class="slip-row"><span>Nama:</span> <span><strong>${k.nama}</strong></span></div>
+                    <hr style="border-top:1px dashed #000; margin:6px 0;">
+                    <div class="slip-row"><span>Gaji Pokok (${totalHadirHari} hr):</span> <span>${formatRupiah(totalGajiPokok)}</span></div>
+                    <div class="slip-row"><span>Lembur (${totalJamLembur} jam):</span> <span>+${formatRupiah(totalUangLembur)}</span></div>
+                    <div class="slip-row"><span>Telat (${totalJamTelat} jam):</span> <span>-${formatRupiah(totalPotonganTelat)}</span></div>
+                    <div class="slip-row"><span>Bonus:</span> <span>+${formatRupiah(k.bonus || 0)}</span></div>
+                    <div class="slip-row"><span>Kasbon:</span> <span>-${formatRupiah(k.kasbon || 0)}</span></div>
+                    <div class="slip-row slip-total"><span>TOTAL GAJI:</span> <span>${formatRupiah(totalGajiAkhir)}</span></div>
+                    <br><br>
+                    <div class="slip-row" style="text-align:center; display:block;">
+                        <p>Diterima Oleh,</p><br><br>
+                        <p>( ${k.nama} )</p>
+                    </div>
                 </div>
-            </div>
-        `;
-
-        window.print();
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        window.close();
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
     }
 
     function resetMinggu(denganArsip) {
