@@ -1,0 +1,1 @@
+function hitung(k){let hadir=0,lembur=0,telat=0;HARI.forEach(h=>{const a=k.absensi[h];if(a.hadir){hadir+=a.setengahHari?.5:1;lembur+=Number(a.jamLembur)||0;telat+=Number(a.jamTelat)||0}});const pokok=hadir*k.gajiPokok,uangLembur=lembur*20000,potTelat=telat*10000,total=pokok+uangLembur-potTelat+(k.bonus||0)-(k.kasbon||0);return {hadir,lembur,telat,pokok,uangLembur,potTelat,total}}
