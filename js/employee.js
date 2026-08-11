@@ -1,0 +1,6 @@
+function buatAbsensiKosong(){return {hadir:false,setengahHari:false,jamLembur:0,jamTelat:0}}
+function buatStrukturKaryawan(nama,gaji,id=null){const abs={};HARI.forEach(h=>abs[h]=buatAbsensiKosong());return {id:id||("k_"+Date.now()+"_"+Math.random().toString(36).slice(2,9)),nama:String(nama),gajiPokok:Number(gaji)||0,absensi:abs,bonus:0,kasbon:0}}
+function normalisasiKaryawan(k){const x=buatStrukturKaryawan(k.nama,k.gajiPokok,k.id);x.bonus=Number(k.bonus)||0;x.kasbon=Number(k.kasbon)||0;HARI.forEach(h=>{const a=k.absensi&&k.absensi[h]?k.absensi[h]:{};x.absensi[h]={hadir:!!a.hadir,setengahHari:!!a.setengahHari,jamLembur:Number(a.jamLembur)||0,jamTelat:Number(a.jamTelat)||0}});return x}
+function tambahKaryawan(){const n=document.getElementById("namaKaryawan"),g=document.getElementById("gajiPokok");if(!n.value.trim()||!g.value){alert("Mohon isi nama dan gaji pokok harian!");return}dataKaryawan.push(buatStrukturKaryawan(n.value.trim(),g.value));n.value="";g.value="";pemicuAutoSave()}
+function hapusKaryawan(id){if(!verifikasiPin())return;dataKaryawan=dataKaryawan.filter(k=>k.id!==id);pemicuAutoSave()}
+function resetSemuaKeDefault(){if(!verifikasiPin())return;if(!confirm("Kembalikan daftar karyawan minggu aktif ke default? Minggu lain tetap aman."))return;dataKaryawan=DEFAULT_KARYAWAN.map(k=>buatStrukturKaryawan(k.nama,k.gajiPokok));pemicuAutoSave()}
