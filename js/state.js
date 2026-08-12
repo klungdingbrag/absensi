@@ -4,4 +4,6 @@ let loadingWeek = false;
 let loadedWeekKey = null;
 let cloudReadyForWeek = false;
 let pendingSave = false;
+let saveInFlight = false;
+let queuedSave = null;
 const LOCAL_BACKUP_PREFIX = "tb_nusantara_absensi_backup_";
