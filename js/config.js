@@ -1,8 +1,8 @@
-// TB Nusantara Absensi — v1.0.1
+// TB Nusantara Absensi — v1.0.2
 const CONFIG = {
   SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwjpeYThkyGewyR8PAY8SxkGPM32-zWkAVniJfzPcLk2yrztpjQPPCECJF3ApKck41_kg/exec",
   PIN_ADMIN: "1234",
-  VERSION: "1.0.1"
+  VERSION: "1.0.2"
 };
 
 const HARI = ["minggu", "senin", "selasa", "rabu", "kamis", "jumat", "sabtu"];
