@@ -5,19 +5,13 @@ function readLocalBackup(weekKey){try{const raw=localStorage.getItem(LOCAL_BACKU
 function dataSignature(data){return JSON.stringify((Array.isArray(data)?data:[]).map(normalisasiKaryawan))}
 
 async function buatKaryawanMingguBaruDariMaster(){
-  try{
-    const res=await fetch(`${CONFIG.SCRIPT_URL}?action=master`,{cache:"no-store"});
-    if(!res.ok)throw new Error(`HTTP ${res.status}`);
-    const result=await res.json();
-    if(!result||result.success!==true||!Array.isArray(result.data))throw new Error(result?.message||"Respons master tidak valid.");
-    const aktif=result.data.filter(k=>String(k.status||"AKTIF").toUpperCase()==="AKTIF");
-    if(aktif.length){
-      return aktif.map(k=>buatStrukturKaryawan(String(k.nama||""),Number(k.gajiPokok)||0,null,String(k.id||"")));
-    }
-  }catch(e){
-    console.warn("Master belum dapat digunakan untuk minggu baru, fallback ke default:",e);
-  }
-  return DEFAULT_KARYAWAN.map(k=>buatStrukturKaryawan(k.nama,k.gajiPokok));
+  const res=await fetch(`${CONFIG.SCRIPT_URL}?action=master`,{cache:"no-store"});
+  if(!res.ok)throw new Error(`Master HTTP ${res.status}`);
+  const result=await res.json();
+  if(!result||result.success!==true||!Array.isArray(result.data))throw new Error(result?.message||"Master karyawan tidak dapat dimuat.");
+  const aktif=result.data.filter(k=>String(k.status||"AKTIF").toUpperCase()==="AKTIF");
+  if(!aktif.length)throw new Error("Belum ada karyawan AKTIF di Master Karyawan. Minggu baru tidak dibuat.");
+  return aktif.map(k=>buatStrukturKaryawan(String(k.nama||""),Number(k.gajiPokok)||0,null,String(k.id||"")));
 }
 
 function updatePeriodeTanggal(autoLoad=false){const p=getPeriodeMinggu();if(!p)return;clearTimeout(timerSave);timerSave=null;pendingSave=false;document.getElementById("tglMulai").value=p.start;document.getElementById("tglSelesai").value=p.end;const start=new Date(p.start+"T00:00:00");HARI.forEach((h,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);document.getElementById("date-"+h).innerText=d.toLocaleDateString("id-ID",{day:"numeric",month:"short"})});document.getElementById("periodeAktif").innerText=`PERIODE AKTIF: ${formatTanggalIndonesia(p.start)} — ${formatTanggalIndonesia(p.end)}`;if(autoLoad)muatDataDariCloud()}
@@ -28,9 +22,9 @@ async function bacaMingguDariCloud(periode){const res=await fetch(`${CONFIG.SCRI
 async function verifikasiSimpanCloud(periode,expectedData){const cloudData=await bacaMingguDariCloud(periode);if(!cloudData.length)throw new Error("Verifikasi gagal: cloud tidak mengembalikan data minggu yang baru disimpan.");if(dataSignature(cloudData)!==dataSignature(expectedData))throw new Error("Verifikasi gagal: data cloud berbeda dari data yang dikirim.");return cloudData}
 
 async function muatDataDariCloud(){if(loadingWeek)return;loadingWeek=true;cloudReadyForWeek=false;pendingSave=false;const p=getPeriodeMinggu();if(!p){loadingWeek=false;return}setStatusSync("loading",`Mengambil data ${p.start} s/d ${p.end}...`);try{const cloudData=await bacaMingguDariCloud(p);if(cloudData.length>0){dataKaryawan=cloudData.map(normalisasiKaryawan);loadedWeekKey=p.start;cloudReadyForWeek=true;backupLocal(p.start,dataKaryawan);setStatusSync("active",`Cloud aktif — ${formatTanggalIndonesia(p.start)} s/d ${formatTanggalIndonesia(p.end)}`);renderTabel();return}
-// GET berhasil dan benar-benar kosong: buat minggu baru berdasarkan Master Karyawan aktif.
-dataKaryawan=await buatKaryawanMingguBaruDariMaster();if(!dataKaryawan.length){throw new Error("Tidak ada karyawan aktif untuk membuat minggu baru.")};loadedWeekKey=p.start;cloudReadyForWeek=true;backupLocal(p.start,dataKaryawan);setStatusSync("loading",`Minggu baru — ${dataKaryawan.length} karyawan dari Master...`);renderTabel();await simpanDataKeCloudDirect(true,p,JSON.parse(JSON.stringify(dataKaryawan)));
-}catch(e){console.error(e);cloudReadyForWeek=false;pendingSave=false;const localBackup=readLocalBackup(p.start);if(localBackup&&Array.isArray(localBackup.data)){dataKaryawan=localBackup.data.map(normalisasiKaryawan);setStatusSync("error",`Cloud gagal — backup lokal ditampilkan untuk ${formatTanggalIndonesia(p.start)}. Perubahan dikunci sampai cloud pulih.`);renderTabel()}else{setStatusSync("error","Cloud gagal dimuat. Data TIDAK diubah dan TIDAK disimpan ulang.")}}finally{loadingWeek=false}}
+// GET berhasil dan benar-benar kosong: minggu baru wajib dibuat dari Master Karyawan aktif.
+dataKaryawan=await buatKaryawanMingguBaruDariMaster();loadedWeekKey=p.start;cloudReadyForWeek=true;backupLocal(p.start,dataKaryawan);setStatusSync("loading",`Minggu baru — ${dataKaryawan.length} karyawan dari Master...`);renderTabel();await simpanDataKeCloudDirect(true,p,JSON.parse(JSON.stringify(dataKaryawan)));
+}catch(e){console.error(e);cloudReadyForWeek=false;pendingSave=false;const localBackup=readLocalBackup(p.start);if(localBackup&&Array.isArray(localBackup.data)){dataKaryawan=localBackup.data.map(normalisasiKaryawan);setStatusSync("error",`Cloud gagal — backup lokal ditampilkan untuk ${formatTanggalIndonesia(p.start)}. Perubahan dikunci sampai cloud pulih.`);renderTabel()}else{setStatusSync("error",`Cloud gagal dimuat. Data TIDAK diubah dan TIDAK disimpan ulang. ${e.message||""}`)}}finally{loadingWeek=false}}
 
 function pemicuAutoSave(){renderTabel();clearTimeout(timerSave);const p=getPeriodeMinggu();if(!p||!cloudReadyForWeek||loadedWeekKey!==p.start){setStatusSync("error","Cloud belum siap. Perubahan TIDAK disimpan untuk mencegah kehilangan data.");return}const snapshot=JSON.parse(JSON.stringify(dataKaryawan));backupLocal(p.start,snapshot);pendingSave=true;setStatusSync("loading","Perubahan menunggu disimpan...");timerSave=setTimeout(()=>simpanDataKeCloudDirect(false,p,snapshot),800)}
 
