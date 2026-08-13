@@ -92,6 +92,38 @@ function tambahMasterKaryawan(){
   simpanMasterKaryawan();
 }
 
+async function terapkanGajiMasterKeMingguSaatIni(masterData){
+  // Gaji Master berubah: minggu yang sedang berjalan ikut berubah segera.
+  // Minggu yang sudah lewat tetap menjadi historical snapshot.
+  const p=getPeriodeMinggu();
+  if(!p||typeof mingguSekarangStart!=='function')return;
+  if(p.start!==mingguSekarangStart())return;
+  if(!cloudReadyForWeek||loadedWeekKey!==p.start||!Array.isArray(dataKaryawan)||!dataKaryawan.length)return;
+
+  const byId=new Map(masterData.map(m=>[String(m.id||''),m]));
+  let changed=false;
+  dataKaryawan.forEach(k=>{
+    const masterId=String(k.masterId||k.employeeId||'');
+    const m=masterId?byId.get(masterId):null;
+    if(!m)return;
+    const nextSalary=Number(m.gajiPokok)||0;
+    const nextName=String(m.nama||'').trim();
+    if(k.gajiPokok!==nextSalary||k.nama!==nextName){
+      k.gajiPokok=nextSalary;
+      if(nextName)k.nama=nextName;
+      changed=true;
+    }
+  });
+
+  if(!changed)return;
+  renderTabel();
+  const snapshot=JSON.parse(JSON.stringify(dataKaryawan));
+  backupLocal(p.start,snapshot);
+  setStatusSync('loading','Memperbarui gaji minggu berjalan...');
+  const ok=await simpanDataKeCloudDirect(false,p,snapshot);
+  if(ok)setStatusSync('active','Gaji Master & minggu berjalan tersinkron');
+}
+
 async function simpanMasterKaryawan(){
   if(masterSaveInFlight)return;
   if(!masterKaryawan.length){alert('Master karyawan tidak boleh kosong.');return;}
@@ -108,6 +140,7 @@ async function simpanMasterKaryawan(){
     const verified=result.data.map(normalisasiMaster);
     if(JSON.stringify(verified.map(x=>[x.id,x.nama,x.gajiPokok,x.status]))!==JSON.stringify(snapshot.map(x=>[x.id,x.nama,x.gajiPokok,x.status])))throw new Error('Data master cloud berbeda dari data yang dikirim.');
     masterKaryawan=verified;renderMasterKaryawan();setStatusSync('active','Master karyawan tersimpan & terverifikasi');
+    await terapkanGajiMasterKeMingguSaatIni(verified);
   }catch(e){console.error(e);setStatusSync('error','Master gagal diverifikasi. Data absensi mingguan tidak diubah.');alert('Master karyawan belum berhasil diverifikasi. Tidak ada perubahan pada absensi mingguan.');}
   finally{masterSaveInFlight=false;}
 }

@@ -4,6 +4,39 @@ function backupLocal(weekKey,data){try{localStorage.setItem(LOCAL_BACKUP_PREFIX+
 function readLocalBackup(weekKey){try{const raw=localStorage.getItem(LOCAL_BACKUP_PREFIX+weekKey);return raw?JSON.parse(raw):null}catch(e){return null}}
 function dataSignature(data){return JSON.stringify((Array.isArray(data)?data:[]).map(normalisasiKaryawan))}
 
+async function ambilMasterAktif(){
+  const res=await fetch(`${CONFIG.SCRIPT_URL}?action=master`,{cache:"no-store"});
+  if(!res.ok)throw new Error(`Master HTTP ${res.status}`);
+  const result=await res.json();
+  if(!result||result.success!==true||!Array.isArray(result.data))throw new Error(result?.message||"Master karyawan tidak dapat dimuat.");
+  return result.data.filter(k=>String(k.status||"AKTIF").toUpperCase()==="AKTIF");
+}
+
+async function buatKaryawanMingguBaruDariMaster(){
+  const aktif=await ambilMasterAktif();
+  if(!aktif.length)throw new Error("Belum ada karyawan AKTIF di Master Karyawan. Minggu baru tidak dibuat.");
+  return aktif.map(k=>buatStrukturKaryawan(String(k.nama||""),Number(k.gajiPokok)||0,null,String(k.id||"")));
+}
+
+function mingguSekarangStart(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return formatDateISO(d)}
+
+async function sinkronkanMasterKeMingguAktif(periode,cloudData){
+  if(periode.start < mingguSekarangStart()) return {data:cloudData,changed:false};
+  const aktif=await ambilMasterAktif();
+  if(!aktif.length)return {data:cloudData,changed:false};
+  const existingIds=new Set(cloudData.map(k=>String(k.masterId||k.employeeId||"")).filter(Boolean));
+  const existingNames=new Set(cloudData.filter(k=>!String(k.masterId||k.employeeId||"")).map(k=>String(k.nama||"").trim().toLowerCase()).filter(Boolean));
+  const additions=[];
+  aktif.forEach(m=>{
+    const id=String(m.id||"");
+    const name=String(m.nama||"").trim().toLowerCase();
+    if((id&&existingIds.has(id))||(!id&&name&&existingNames.has(name)))return;
+    additions.push(buatStrukturKaryawan(String(m.nama||""),Number(m.gajiPokok)||0,null,id));
+  });
+  if(!additions.length)return {data:cloudData,changed:false};
+  return {data:[...cloudData,...additions],changed:true};
+}
+
 function updatePeriodeTanggal(autoLoad=false){const p=getPeriodeMinggu();if(!p)return;clearTimeout(timerSave);timerSave=null;pendingSave=false;document.getElementById("tglMulai").value=p.start;document.getElementById("tglSelesai").value=p.end;const start=new Date(p.start+"T00:00:00");HARI.forEach((h,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);document.getElementById("date-"+h).innerText=d.toLocaleDateString("id-ID",{day:"numeric",month:"short"})});document.getElementById("periodeAktif").innerText=`PERIODE AKTIF: ${formatTanggalIndonesia(p.start)} — ${formatTanggalIndonesia(p.end)}`;if(autoLoad)muatDataDariCloud()}
 function pindahMinggu(delta){const p=getPeriodeMinggu();if(!p)return;clearTimeout(timerSave);timerSave=null;pendingSave=false;const d=new Date(p.start+"T00:00:00");d.setDate(d.getDate()+delta*7);document.getElementById("tglMulai").value=formatDateISO(d);updatePeriodeTanggal(true)}
 
@@ -11,10 +44,39 @@ async function bacaMingguDariCloud(periode){const res=await fetch(`${CONFIG.SCRI
 
 async function verifikasiSimpanCloud(periode,expectedData){const cloudData=await bacaMingguDariCloud(periode);if(!cloudData.length)throw new Error("Verifikasi gagal: cloud tidak mengembalikan data minggu yang baru disimpan.");if(dataSignature(cloudData)!==dataSignature(expectedData))throw new Error("Verifikasi gagal: data cloud berbeda dari data yang dikirim.");return cloudData}
 
-async function muatDataDariCloud(){if(loadingWeek)return;loadingWeek=true;cloudReadyForWeek=false;pendingSave=false;const p=getPeriodeMinggu();if(!p){loadingWeek=false;return}setStatusSync("loading",`Mengambil data ${p.start} s/d ${p.end}...`);try{const cloudData=await bacaMingguDariCloud(p);if(cloudData.length>0){dataKaryawan=cloudData.map(normalisasiKaryawan);loadedWeekKey=p.start;cloudReadyForWeek=true;backupLocal(p.start,dataKaryawan);setStatusSync("active",`Cloud aktif — ${formatTanggalIndonesia(p.start)} s/d ${formatTanggalIndonesia(p.end)}`);renderTabel();return}
-// GET berhasil dan benar-benar kosong: baru sekarang minggu baru boleh dibuat.
-dataKaryawan=DEFAULT_KARYAWAN.map(k=>buatStrukturKaryawan(k.nama,k.gajiPokok));loadedWeekKey=p.start;cloudReadyForWeek=true;backupLocal(p.start,dataKaryawan);setStatusSync("loading",`Minggu baru — membuat data ${formatTanggalIndonesia(p.start)}...`);renderTabel();await simpanDataKeCloudDirect(true,p,JSON.parse(JSON.stringify(dataKaryawan)));
-}catch(e){console.error(e);cloudReadyForWeek=false;pendingSave=false;const localBackup=readLocalBackup(p.start);if(localBackup&&Array.isArray(localBackup.data)){dataKaryawan=localBackup.data.map(normalisasiKaryawan);setStatusSync("error",`Cloud gagal — backup lokal ditampilkan untuk ${formatTanggalIndonesia(p.start)}. Perubahan dikunci sampai cloud pulih.`);renderTabel()}else{setStatusSync("error","Cloud gagal dimuat. Data TIDAK diubah dan TIDAK disimpan ulang.")}}finally{loadingWeek=false}}
+async function muatDataDariCloud(){if(loadingWeek)return;loadingWeek=true;cloudReadyForWeek=false;pendingSave=false;const p=getPeriodeMinggu();if(!p){loadingWeek=false;return}setStatusSync("loading",`Mengambil data ${p.start} s/d ${p.end}...`);try{const cloudData=await bacaMingguDariCloud(p);if(cloudData.length>0){
+  let displayData=cloudData;
+  let masterSyncFailed=null;
+  try{
+    const synced=await sinkronkanMasterKeMingguAktif(p,cloudData);
+    displayData=synced.data;
+    dataKaryawan=displayData.map(normalisasiKaryawan);
+    loadedWeekKey=p.start;
+    cloudReadyForWeek=true;
+    backupLocal(p.start,dataKaryawan);
+    if(synced.changed){
+      setStatusSync("loading",`Menambahkan ${dataKaryawan.length-cloudData.length} karyawan Master...`);
+      renderTabel();
+      await simpanDataKeCloudDirect(true,p,JSON.parse(JSON.stringify(dataKaryawan)));
+    }else{
+      setStatusSync("active",`Cloud aktif — ${formatTanggalIndonesia(p.start)} s/d ${formatTanggalIndonesia(p.end)}`);
+      renderTabel();
+    }
+  }catch(masterError){
+    masterSyncFailed=masterError;
+    // Weekly cloud data is still valid. Do not discard it merely because Master is unavailable.
+    dataKaryawan=cloudData.map(normalisasiKaryawan);
+    loadedWeekKey=p.start;
+    cloudReadyForWeek=true;
+    backupLocal(p.start,dataKaryawan);
+    setStatusSync("warning",`Cloud aktif — Master belum tersinkron (${masterError.message||"gagal dimuat"}).`);
+    renderTabel();
+  }
+  return;
+}
+// GET berhasil dan benar-benar kosong: minggu baru wajib dibuat dari Master Karyawan aktif.
+dataKaryawan=await buatKaryawanMingguBaruDariMaster();loadedWeekKey=p.start;cloudReadyForWeek=true;backupLocal(p.start,dataKaryawan);setStatusSync("loading",`Minggu baru — ${dataKaryawan.length} karyawan dari Master...`);renderTabel();await simpanDataKeCloudDirect(true,p,JSON.parse(JSON.stringify(dataKaryawan)));
+}catch(e){console.error(e);cloudReadyForWeek=false;pendingSave=false;const localBackup=readLocalBackup(p.start);if(localBackup&&Array.isArray(localBackup.data)){dataKaryawan=localBackup.data.map(normalisasiKaryawan);setStatusSync("error",`Cloud gagal — backup lokal ditampilkan untuk ${formatTanggalIndonesia(p.start)}. Perubahan dikunci sampai cloud pulih.`);renderTabel()}else{setStatusSync("error",`Cloud gagal dimuat. Data TIDAK diubah dan TIDAK disimpan ulang. ${e.message||""}`)}}finally{loadingWeek=false}}
 
 function pemicuAutoSave(){renderTabel();clearTimeout(timerSave);const p=getPeriodeMinggu();if(!p||!cloudReadyForWeek||loadedWeekKey!==p.start){setStatusSync("error","Cloud belum siap. Perubahan TIDAK disimpan untuk mencegah kehilangan data.");return}const snapshot=JSON.parse(JSON.stringify(dataKaryawan));backupLocal(p.start,snapshot);pendingSave=true;setStatusSync("loading","Perubahan menunggu disimpan...");timerSave=setTimeout(()=>simpanDataKeCloudDirect(false,p,snapshot),800)}
 
