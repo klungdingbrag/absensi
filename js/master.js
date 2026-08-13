@@ -6,6 +6,7 @@ async function bukaMasterKaryawan(){
   const modal=document.getElementById('masterModal');
   if(!modal)return;
   modal.classList.add('show');
+  const panel=document.getElementById('salaryHistoryPanel');if(panel)panel.innerHTML='';
   await muatMasterKaryawan();
 }
 function tutupMasterKaryawan(){document.getElementById('masterModal')?.classList.remove('show');}
@@ -42,9 +43,32 @@ function renderMasterKaryawan(){
         <strong>${escapeHtml(k.nama)}</strong>
         <span>${escapeHtml(k.id)} · ${formatRupiah(k.gajiPokok)}/hari</span>
       </div>
-      <div class="master-employee-meta"><span class="status-pill">${escapeHtml(k.status)}</span><button class="btn secondary mini" onclick="editMasterKaryawan('${escapeJs(k.id)}')">Edit</button></div>
+      <div class="master-employee-meta"><span class="status-pill">${escapeHtml(k.status)}</span><button class="btn secondary mini" onclick="lihatRiwayatGaji('${escapeJs(k.id)}')">Riwayat</button><button class="btn secondary mini" onclick="editMasterKaryawan('${escapeJs(k.id)}')">Edit</button></div>
     </div>`).join('');
 }
+
+async function lihatRiwayatGaji(id){
+  const k=masterKaryawan.find(x=>x.id===id);if(!k)return;
+  const panel=document.getElementById('salaryHistoryPanel');
+  if(panel)panel.innerHTML=`<div class="salary-history-card"><div class="salary-history-title">⏳ Riwayat Gaji — ${escapeHtml(k.nama)}</div></div>`;
+  try{
+    const res=await fetch(`${CONFIG.SCRIPT_URL}?action=salary_history&employeeId=${encodeURIComponent(id)}`,{cache:'no-store'});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const result=await res.json();
+    if(!result||result.success!==true||!Array.isArray(result.data))throw new Error(result?.message||'Respons riwayat gaji tidak valid.');
+    renderRiwayatGaji(k,result.data);
+  }catch(e){
+    console.error(e);
+    if(panel)panel.innerHTML='<div class="master-error">🔴 Riwayat gaji gagal dimuat. Data master dan absensi tidak diubah.</div>';
+  }
+}
+
+function renderRiwayatGaji(k,history){
+  const panel=document.getElementById('salaryHistoryPanel');if(!panel)return;
+  if(!history.length){panel.innerHTML=`<div class="salary-history-card"><div class="salary-history-title">Riwayat Gaji — ${escapeHtml(k.nama)}</div><div class="master-empty">Belum ada riwayat perubahan gaji.</div></div>`;return;}
+  panel.innerHTML=`<div class="salary-history-card"><div class="salary-history-head"><strong>📈 Riwayat Gaji — ${escapeHtml(k.nama)}</strong><button class="btn secondary mini" onclick="tutupRiwayatGaji()">Tutup</button></div><div class="salary-history-table"><div class="salary-history-row salary-history-header"><span>Tanggal</span><span>Gaji Lama</span><span>Gaji Baru</span><span>Alasan</span></div>${history.map(h=>`<div class="salary-history-row"><span>${escapeHtml(h.changedAt||'-')}</span><span>${formatRupiah(h.gajiLama||0)}</span><span>${formatRupiah(h.gajiBaru||0)}</span><span>${escapeHtml(h.alasan||'-')}</span></div>`).join('')}</div></div>`;
+}
+function tutupRiwayatGaji(){const panel=document.getElementById('salaryHistoryPanel');if(panel)panel.innerHTML='';}
 
 function editMasterKaryawan(id){
   const k=masterKaryawan.find(x=>x.id===id);if(!k)return;
@@ -75,8 +99,7 @@ async function simpanMasterKaryawan(){
   const snapshot=JSON.parse(JSON.stringify(masterKaryawan));
   setStatusSync('loading','Menyimpan master karyawan...');
   try{
-    const res=await fetch(CONFIG.SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'save_master',data:snapshot})});
-    // no-cors tidak memberi response yang bisa dipercaya. Verifikasi dengan GET.
+    await fetch(CONFIG.SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'save_master',data:snapshot})});
     await new Promise(r=>setTimeout(r,350));
     const verifyRes=await fetch(`${CONFIG.SCRIPT_URL}?action=master`,{cache:'no-store'});
     if(!verifyRes.ok)throw new Error(`HTTP ${verifyRes.status}`);
