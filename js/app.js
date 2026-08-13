@@ -6,18 +6,27 @@ function mingguIniStart(){
 }
 
 function kembaliKeMingguIni(){
-  const current=mendapatkanPeriodeAktif();
   const target=mingguIniStart();
   if(!target)return;
+
+  const current=mendapatkanPeriodeAktif();
   if(current && current.start===target){
     updateStatusNavigasi();
     return;
   }
+
   clearTimeout(timerSave);
   timerSave=null;
   pendingSave=false;
-  document.getElementById('tglMulai').value=target;
-  updatePeriodeTanggal(true);
+
+  const input=document.getElementById('tglMulai');
+  if(!input)return;
+
+  // Jangan langsung memicu dua proses update sekaligus.
+  input.value=target;
+  updatePeriodeTanggal(false);
+  updateStatusNavigasi();
+  muatDataDariCloud();
 }
 
 function mendapatkanPeriodeAktif(){
@@ -51,7 +60,12 @@ function updateStatusNavigasi(){
   }
 }
 
-document.getElementById('tglMulai').addEventListener('change',()=>updatePeriodeTanggal(true));
+// Sinkronkan label navigasi setiap kali periode berubah.
+document.getElementById('tglMulai').addEventListener('change',()=>{
+  updatePeriodeTanggal(true);
+  updateStatusNavigasi();
+});
+
 window.addEventListener('DOMContentLoaded',()=>{
   const now=new Date(),start=new Date(now);
   start.setDate(now.getDate()-now.getDay());
