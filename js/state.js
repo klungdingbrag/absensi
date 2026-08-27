@@ -6,4 +6,5 @@ let cloudReadyForWeek = false;
 let pendingSave = false;
 let saveInFlight = false;
 let queuedSave = null;
+let payrollPayment = {status:"UNPAID",paidAt:null,paidAmount:0};
 const LOCAL_BACKUP_PREFIX = "tb_nusantara_absensi_backup_";
