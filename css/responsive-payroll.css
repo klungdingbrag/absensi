@@ -1,0 +1,26 @@
+/* Responsive payroll v2 — desktop summary without horizontal scrolling */
+@media(min-width:851px){
+  .table-wrap{overflow-x:hidden}
+  table{min-width:0!important;width:100%;table-layout:fixed}
+  table th,table td{padding:6px 4px}
+  table th:nth-child(3),table th:nth-child(4),table th:nth-child(5),table th:nth-child(6),table th:nth-child(7),table th:nth-child(8),table th:nth-child(9),table td:nth-child(3),table td:nth-child(4),table td:nth-child(5),table td:nth-child(6),table td:nth-child(7),table td:nth-child(8),table td:nth-child(9){display:none}
+  table thead tr:first-child th:nth-child(3){display:none}
+  table th:nth-child(1){width:13%}table th:nth-child(2){width:10%}table th:nth-child(10){width:7%}table th:nth-child(11){width:9%}table th:nth-child(12){width:9%}table th:nth-child(13){width:10%}table th:nth-child(14){width:10%}table th:nth-child(15){width:12%}table th:nth-child(16){width:11%}table th:nth-child(17){width:13%}
+  .payroll-summary-row td:nth-child(10),.payroll-summary-row td:nth-child(11),.payroll-summary-row td:nth-child(12){white-space:nowrap}
+  .payroll-summary-row .money-input{width:100%;max-width:86px}
+  .desktop-absensi-btn{background:#475569!important;color:#fff!important}
+  .desktop-detail-row td{display:table-cell!important;padding:0!important;background:#f8fafc}
+  .desktop-absensi-detail{padding:10px;border-top:1px solid #cbd5e1}
+  .desktop-detail-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;color:#334155;font-size:11px}
+  .desktop-detail-title span{font-size:10px;color:#64748b;font-weight:400}
+  .desktop-day-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+  .desktop-day-box{border:1px solid #cbd5e1;border-radius:5px;background:#fff;padding:6px;min-width:0}
+  .desktop-day-title{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;font-size:10px;font-weight:800;color:#334155}
+  .desktop-day-title small{font-size:8px;font-weight:500;color:#64748b}
+  .desktop-day-box .check{font-size:9px;padding:3px 2px}
+  .desktop-day-box .time{font-size:8px}
+  .desktop-day-box .time input{width:38px;height:22px;font-size:9px}
+}
+@media(max-width:850px){
+  .desktop-absensi-btn{display:none!important}
+}
