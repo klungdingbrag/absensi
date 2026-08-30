@@ -1,0 +1,9 @@
+/* Final layout override for 12-column payroll recap */
+.pp-payroll-card .total-salary-cell{background:#f0fdf4!important;color:#166534!important;font-weight:800!important;text-align:center!important;white-space:nowrap!important;border-left:1px solid #dcfce7!important;border-right:1px solid #dcfce7!important}
+.pp-payroll-card .total-salary-cell strong{font-size:10px!important}
+.pp-payroll-card thead th:nth-child(8){background:#f0fdf4!important;color:#166534!important}
+@media(min-width:851px){
+.pp-payroll-card th:nth-child(1),.pp-payroll-card td:nth-child(1){width:11%!important}.pp-payroll-card th:nth-child(2),.pp-payroll-card td:nth-child(2){width:8%!important}.pp-payroll-card th:nth-child(3),.pp-payroll-card td:nth-child(3){width:7%!important}.pp-payroll-card th:nth-child(4),.pp-payroll-card td:nth-child(4){width:8%!important}.pp-payroll-card th:nth-child(5),.pp-payroll-card td:nth-child(5){width:8%!important}.pp-payroll-card th:nth-child(6),.pp-payroll-card td:nth-child(6){width:7%!important}.pp-payroll-card th:nth-child(7),.pp-payroll-card td:nth-child(7){width:7%!important}.pp-payroll-card th:nth-child(8),.pp-payroll-card td:nth-child(8){width:11%!important}.pp-payroll-card th:nth-child(9),.pp-payroll-card td:nth-child(9){width:13%!important}.pp-payroll-card th:nth-child(10),.pp-payroll-card td:nth-child(10){width:10%!important}.pp-payroll-card th:nth-child(11),.pp-payroll-card td:nth-child(11){width:5%!important}.pp-payroll-card th:nth-child(12),.pp-payroll-card td:nth-child(12){width:5%!important}
+.pp-payroll-card .total-salary-cell{padding:8px 3px!important}.pp-payroll-card .actions-cell{padding-left:3px!important;padding-right:3px!important}
+}
+@media(max-width:1180px){.pp-payroll-card .total-salary-cell strong{font-size:9px!important}}
