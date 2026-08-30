@@ -1,0 +1,29 @@
+/* Final payroll UI polish — presentation only */
+.pp-payroll-card{background:#fff!important}
+.pp-payroll-card .card-header{display:flex!important;align-items:center!important;gap:9px!important;font-weight:800!important;letter-spacing:.02em!important}
+.pp-payroll-card .card-header::before{content:"";width:4px;height:18px;border-radius:999px;background:linear-gradient(180deg,#2563eb,#7c3aed);flex:0 0 auto}
+.pp-payroll-card thead th{height:42px!important;font-weight:800!important;text-align:center!important;white-space:normal!important;line-height:1.25!important}
+.pp-payroll-card thead th:first-child{text-align:left!important;padding-left:12px!important}
+.pp-payroll-card tbody tr.payroll-summary-row{background:#fff!important;transition:background .18s ease,box-shadow .18s ease}
+.pp-payroll-card tbody tr.payroll-summary-row:hover{background:#f8fbff!important;box-shadow:inset 3px 0 0 #2563eb}
+.pp-payroll-card tbody tr.payroll-summary-row td{height:64px!important}
+.pp-payroll-card .employee-name-cell .font-bold{font-size:11px!important;line-height:1.25!important}
+.pp-payroll-card .payroll-summary-row>td:nth-child(2),.pp-payroll-card .payroll-summary-row>td:nth-child(3),.pp-payroll-card .payroll-summary-row>td:nth-child(4),.pp-payroll-card .payroll-summary-row>td:nth-child(5){text-align:center!important}
+.pp-payroll-card .payroll-summary-row>td:nth-child(3) strong{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;padding:0 7px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:10px}
+.pp-payroll-card .payroll-summary-row>td:nth-child(4) strong{color:#15803d}.pp-payroll-card .payroll-summary-row>td:nth-child(5) strong{color:#b45309}
+.pp-payroll-card .money-input{background:#fbfdff!important;border:1px solid #dbe4f0!important;text-align:right!important;font-weight:700!important;color:#334155!important;transition:border-color .15s,box-shadow .15s,background .15s}
+.pp-payroll-card .money-input:focus{outline:0!important;border-color:#60a5fa!important;background:#fff!important;box-shadow:0 0 0 3px #dbeafe!important}
+.pp-payroll-card .payment-cell{background:linear-gradient(180deg,#f8fffb,#f1fcf6)!important;border-left:1px solid #e5f5eb!important;border-right:1px solid #e5f5eb!important}
+.pp-payroll-card .payment-cell .payment-status{min-height:48px!important}
+.pp-payroll-card .actions-cell{background:#fafbfe!important}
+.pp-payroll-card .actions-cell .desktop-absensi-btn{background:#eef5ff!important;color:#1d4ed8!important;border-color:#cfe0ff!important;font-weight:800!important}
+.pp-payroll-card .actions-cell .desktop-absensi-btn:hover{background:#dbeafe!important}
+.pp-payroll-card .actions-cell button[title^="Cetak"]{background:#f5f3ff!important;color:#6d28d9!important;border-color:#ddd6fe!important;font-weight:800!important}
+.pp-payroll-card .actions-cell button[title^="Cetak"]:hover{background:#ede9fe!important}
+.pp-payroll-card .actions-cell button[title^="Hapus"]{background:#fff5f5!important;color:#dc2626!important;border-color:#fecaca!important;font-weight:800!important}
+.pp-payroll-card .actions-cell button[title^="Hapus"]:hover{background:#fee2e2!important}
+.pp-payroll-card .summary-cell{font-weight:900!important;font-size:11px!important;background:#ecfdf5!important;color:#166534!important;box-shadow:inset 0 0 0 1px #d1fae5}
+.pp-payroll-card .desktop-detail-row:not([hidden])>td{background:#f8fafc!important}.pp-payroll-card .desktop-detail-title{padding:2px 3px 8px!important}
+.pp-payroll-card .desktop-day-box{transition:transform .15s ease,box-shadow .15s ease}.pp-payroll-card .desktop-day-box:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,.05)}
+@media(min-width:1181px){.pp-payroll-card .payment-cell button,.pp-payroll-card .payment-cell .payment-btn{max-width:155px!important}.pp-payroll-card .actions-cell:nth-child(9){background:#f8fbff!important}.pp-payroll-card .actions-cell:nth-child(10){background:#faf8ff!important}.pp-payroll-card .actions-cell:nth-child(11){background:#fffafa!important}}
+@media(max-width:1180px) and (min-width:851px){.pp-payroll-card tbody tr.payroll-summary-row td{height:58px!important}.pp-payroll-card .payment-cell button,.pp-payroll-card .payment-cell .payment-btn{font-size:8px!important}.pp-payroll-card .money-input{height:28px!important}}
