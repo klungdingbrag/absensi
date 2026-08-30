@@ -1,2 +1,30 @@
-/* Total Gaji + action columns — compact, aligned presentation */
-.pp-payroll-card .total-salary-cell{background:#f0fdf4!important;color:#166534!important;font-weight:800!important;text-align:center!important;white-space:nowrap!important;border-left:1px solid #dcfce7!important;border-right:1px solid #dcfce7!important}.pp-payroll-card .total-salary-cell strong{font-size:11px!important}.pp-payroll-card thead th:nth-child(8){background:#f0fdf4!important;color:#166534!important}.pp-payroll-card .payment-cell{min-width:118px!important;white-space:nowrap!important}.pp-payroll-card .actions-cell{min-width:82px!important;padding-left:5px!important;padding-right:5px!important;white-space:nowrap!important}.pp-payroll-card .actions-cell .btn.mini{white-space:nowrap!important;padding:6px 8px!important;font-size:11px!important}.pp-payroll-card thead th:nth-child(9){min-width:118px!important}.pp-payroll-card thead th:nth-child(10){min-width:82px!important}.pp-payroll-card thead th:nth-child(11){min-width:65px!important}.pp-payroll-card thead th:nth-child(12){min-width:62px!important}@media(max-width:1180px){.pp-payroll-card .total-salary-cell strong{font-size:9px!important}.pp-payroll-card .payment-cell{min-width:105px!important}.pp-payroll-card .actions-cell{min-width:68px!important}.pp-payroll-card .actions-cell .btn.mini{padding:5px 6px!important;font-size:10px!important}}
+/* Payroll table — balanced 12-column desktop layout */
+@media(min-width:851px){
+  .pp-payroll-card .table-wrap{overflow-x:auto!important}
+  .pp-payroll-card table{width:100%!important;table-layout:fixed!important;min-width:1180px!important;border-collapse:separate!important;border-spacing:0!important}
+  .pp-payroll-card thead th,.pp-payroll-card .payroll-summary-row>td{text-align:center!important;vertical-align:middle!important}
+  .pp-payroll-card thead th{padding:10px 6px!important;white-space:normal!important;line-height:1.25!important}
+  .pp-payroll-card .payroll-summary-row>td{padding:9px 6px!important}
+  .pp-payroll-card table th:nth-child(1),.pp-payroll-card table td:nth-child(1){width:12%}
+  .pp-payroll-card table th:nth-child(2),.pp-payroll-card table td:nth-child(2){width:8%}
+  .pp-payroll-card table th:nth-child(3),.pp-payroll-card table td:nth-child(3){width:7%}
+  .pp-payroll-card table th:nth-child(4),.pp-payroll-card table td:nth-child(4){width:8%}
+  .pp-payroll-card table th:nth-child(5),.pp-payroll-card table td:nth-child(5){width:8%}
+  .pp-payroll-card table th:nth-child(6),.pp-payroll-card table td:nth-child(6){width:7%}
+  .pp-payroll-card table th:nth-child(7),.pp-payroll-card table td:nth-child(7){width:7%}
+  .pp-payroll-card table th:nth-child(8),.pp-payroll-card table td:nth-child(8){width:10%}
+  .pp-payroll-card table th:nth-child(9),.pp-payroll-card table td:nth-child(9){width:11%}
+  .pp-payroll-card table th:nth-child(10),.pp-payroll-card table td:nth-child(10){width:10%}
+  .pp-payroll-card table th:nth-child(11),.pp-payroll-card table td:nth-child(11){width:6%}
+  .pp-payroll-card table th:nth-child(12),.pp-payroll-card table td:nth-child(12){width:6%}
+  .pp-payroll-card .total-salary-cell{background:#f0fdf4!important;color:#166534!important;font-weight:800!important;white-space:nowrap!important;border-left:1px solid #dcfce7!important;border-right:1px solid #dcfce7!important}
+  .pp-payroll-card thead th:nth-child(8){background:#f0fdf4!important;color:#166534!important}
+  .pp-payroll-card .payment-cell{padding:8px 7px!important;min-width:0!important}
+  .pp-payroll-card .employee-payment-card{width:100%!important;max-width:112px!important;margin:0 auto!important}
+  .pp-payroll-card .actions-cell{padding:9px 7px!important;min-width:0!important;white-space:normal!important}
+  .pp-payroll-card .actions-cell+.actions-cell{border-left:1px solid #e5e7eb!important}
+  .pp-payroll-card .actions-cell .btn.mini{display:inline-flex!important;align-items:center!important;justify-content:center!important;margin:0 auto!important;min-width:58px!important;max-width:100%!important;white-space:nowrap!important;padding:6px 7px!important;font-size:10px!important;line-height:1.15!important}
+  .pp-payroll-card .desktop-absensi-btn{min-width:76px!important}
+  .pp-payroll-card td:nth-child(11) .btn.mini,.pp-payroll-card td:nth-child(12) .btn.mini{min-width:52px!important}
+}
+@media(max-width:850px){.pp-payroll-card .total-salary-cell{text-align:center!important;background:#f0fdf4!important;color:#166534!important;font-weight:800!important}.pp-payroll-card .total-salary-cell strong{font-size:11px!important}}
