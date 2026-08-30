@@ -6,6 +6,7 @@ function updatePremiumKpis(grand,totalHadir,totalLembur,totalTelat){const set=(i
 function renderTabel(){
   const pos=window.scrollY||window.pageYOffset||document.documentElement.scrollTop||0;
   const openIds=Array.from(document.querySelectorAll(".karyawan-card.is-open")).map(c=>c.id.replace(/^employee-card-/,'')).filter(Boolean);
+  const desktopOpenIds=Array.from(document.querySelectorAll(".desktop-detail-row:not([hidden])")).map(r=>r.id.replace(/^desktop-detail-/,'')).filter(Boolean);
   const activeElement=document.activeElement;const activeId=activeElement?.id||null;
   const desktop=document.getElementById("bodyTabelDesktop"),mobile=document.getElementById("mobileCardsContainer");
   desktop.innerHTML="";mobile.innerHTML="";let grand=0,totalHadir=0,totalLembur=0,totalTelat=0;
@@ -27,5 +28,6 @@ function renderTabel(){
   updatePremiumKpis(grand,totalHadir,totalLembur,totalTelat);
   if(typeof renderStatusPembayaran==="function")renderStatusPembayaran();
   openIds.forEach(id=>{const card=document.getElementById(`employee-card-${id}`),body=document.getElementById(`employee-body-${id}`),icon=document.getElementById(`employee-toggle-${id}`);if(card&&body){card.classList.add("is-open");body.hidden=false;if(icon)icon.textContent="▲"}});
+  desktopOpenIds.forEach(id=>{const row=document.getElementById(`desktop-detail-${id}`),btn=document.getElementById(`desktop-detail-btn-${id}`);if(row){row.hidden=false;if(btn){btn.textContent="▾ Tutup Detail";btn.classList.add("is-open")}}});
   requestAnimationFrame(()=>{window.scrollTo({top:pos,left:0,behavior:"instant"});if(activeId){const next=document.getElementById(activeId);if(next&&document.activeElement!==next)try{next.focus({preventScroll:true})}catch(e){}}});
 }
