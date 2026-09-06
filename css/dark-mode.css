@@ -1,0 +1,77 @@
+/* TB Nusantara — Dark Mode UI
+   Presentation only. Payroll/data/backend logic untouched. */
+:root{color-scheme:light}
+body.dark-mode{color-scheme:dark;background:#0f172a!important;color:#e2e8f0!important;transition:background-color .2s ease,color .2s ease}
+body.dark-mode .pp-main{background:#0f172a!important}
+body.dark-mode .pp-sidebar{background:#111827!important;border-color:#1e293b!important}
+body.dark-mode .pp-brand,body.dark-mode .pp-nav-item,body.dark-mode .pp-cloud-card,body.dark-mode .pp-topbar{color:#e2e8f0!important}
+body.dark-mode .pp-nav-item:not(.active){color:#94a3b8!important}
+body.dark-mode .pp-nav-item:hover{background:#1e293b!important;color:#f8fafc!important}
+body.dark-mode .pp-cloud-card{background:#172033!important;border-color:#263449!important}
+body.dark-mode .pp-content-head h2{color:#f8fafc!important}
+body.dark-mode .pp-content-head p,body.dark-mode .pp-period-title,body.dark-mode .pp-user span,body.dark-mode .helper-text{color:#94a3b8!important}
+body.dark-mode .pp-period-value,body.dark-mode .pp-user strong{color:#f8fafc!important}
+body.dark-mode .card,body.dark-mode .pp-kpi,body.dark-mode .pp-payroll-card>.card-header{background:#111827!important;border-color:#273449!important;color:#e2e8f0!important}
+body.dark-mode .pp-period-card{background:#172033!important;border-color:#23415f!important}
+body.dark-mode .pp-period-card .week-nav{border-top-color:#263449!important}
+body.dark-mode .pp-period-card .week-nav .secondary,body.dark-mode .modal-close{background:#1e293b!important;color:#cbd5e1!important;border-color:#334155!important}
+body.dark-mode .pp-employee-tools{background:#172033!important;border-color:#263449!important}
+body.dark-mode .card-header{color:#e2e8f0!important}
+body.dark-mode label{color:#cbd5e1!important}
+body.dark-mode input[type=text],body.dark-mode input[type=number],body.dark-mode input[type=date],body.dark-mode .money-input{background:#0f172a!important;color:#f1f5f9!important;border-color:#334155!important}
+body.dark-mode input::placeholder{color:#64748b!important}
+body.dark-mode input:focus{border-color:#60a5fa!important;box-shadow:0 0 0 2px rgba(96,165,250,.12)}
+body.dark-mode .pp-period-card #tglSelesai{background:#1e293b!important;color:#cbd5e1!important}
+body.dark-mode .sync{background:#172033!important;border-color:#334155!important;color:#cbd5e1!important}
+body.dark-mode .pp-payroll-card .table-wrap{border-color:#334155!important}
+body.dark-mode .pp-payroll-card th{background:#1e293b!important;color:#cbd5e1!important;border-color:#334155!important}
+body.dark-mode .pp-payroll-card td{background:#111827!important;color:#e2e8f0!important;border-color:#334155!important}
+body.dark-mode .pp-payroll-card .desktop-absensi-detail{background:#172033!important}
+body.dark-mode .pp-payroll-card .desktop-day-box{background:#111827!important;border-color:#334155!important}
+body.dark-mode .pp-payroll-card .desktop-day-title,body.dark-mode .pp-payroll-card .mobile-day-title{color:#e2e8f0!important;border-color:#334155!important}
+body.dark-mode .pp-payroll-card .check{background:#1e293b!important;color:#e2e8f0!important;border-color:#334155!important}
+body.dark-mode .pp-payroll-card .check.half{background:#2a2412!important}
+body.dark-mode .pp-payroll-card .time{color:#94a3b8!important}
+body.dark-mode .pp-payroll-card .total-salary-cell{color:#86efac!important}
+body.dark-mode .pp-payroll-card .actions-cell .btn.secondary.mini,body.dark-mode .employee-card-actions .btn.secondary.mini{background:#1e293b!important;color:#cbd5e1!important;border-color:#475569!important}
+body.dark-mode .pp-payroll-card .actions-cell .btn.success.mini,body.dark-mode .employee-card-actions .btn.success.mini{background:#123524!important;color:#86efac!important;border-color:#166534!important}
+body.dark-mode .karyawan-card{background:#111827!important;border-color:#334155!important}
+body.dark-mode .karyawan-card-header{background:#1e293b!important}
+body.dark-mode .karyawan-card-body{background:#111827!important}
+body.dark-mode .mobile-day-box{background:#172033!important;border-color:#334155!important}
+body.dark-mode .mobile-summary-box{background:#12271d!important;border-color:#166534!important;color:#e2e8f0!important}
+body.dark-mode .payroll-payment-status{background:#111827!important;border-color:#334155!important}
+body.dark-mode .payment-count{color:#cbd5e1!important}
+body.dark-mode .payment-amount{color:#94a3b8!important}
+body.dark-mode .employee-payment-card{background:#172033!important;border-color:#334155!important}
+body.dark-mode .employee-payment-card.unpaid{background:#2a2412!important;border-color:#854d0e!important}
+body.dark-mode .employee-payment-card.paid{background:#12271d!important;border-color:#166534!important}
+body.dark-mode .total-gaji-box{box-shadow:0 3px 14px rgba(0,0,0,.28)!important}
+body.dark-mode .master-employee-list,body.dark-mode .master-loading,body.dark-mode .master-error,body.dark-mode .master-empty{background:#111827!important;color:#94a3b8!important}
+body.dark-mode .master-employee-row{border-color:#334155!important}
+body.dark-mode .master-employee-info strong{color:#f1f5f9!important}
+body.dark-mode .master-employee-info span{color:#94a3b8!important}
+body.dark-mode .master-employee-row.inactive .status-pill{background:#334155!important;color:#94a3b8!important}
+body.dark-mode .select-master-row{background:#172033!important;border-color:#334155!important;color:#93c5fd!important}
+body.dark-mode .select-master-row:hover{background:#1e293b!important;border-color:#60a5fa!important}
+body.dark-mode .select-master-row strong{color:#f1f5f9!important}
+body.dark-mode .select-master-row small{color:#94a3b8!important}
+body.dark-mode .select-master-row.already{background:#12271d!important;border-color:#166534!important}
+body.dark-mode .salary-history-card{background:#172033!important;border-color:#334155!important}
+body.dark-mode .salary-history-head{background:#1e3a5f!important;border-color:#334155!important}
+body.dark-mode .salary-history-head strong,body.dark-mode .salary-history-title{color:#bfdbfe!important}
+body.dark-mode .salary-history-row{background:#111827!important;border-color:#334155!important;color:#cbd5e1!important}
+body.dark-mode .salary-history-row.salary-history-header{background:#0f172a!important;color:#fff!important}
+body.dark-mode .salary-history-row:not(.salary-history-header):nth-child(even){background:#172033!important}
+body.dark-mode .salary-history-row span:nth-child(2),body.dark-mode .salary-history-row span:nth-child(3){color:#f1f5f9!important}
+body.dark-mode .salary-history-row:not(.salary-history-header) span:nth-child(3){color:#86efac!important}
+body.dark-mode .salary-history-row:not(.salary-history-header) span:nth-child(4),body.dark-mode .salary-history-row:not(.salary-history-header) span:first-child{color:#94a3b8!important}
+body.dark-mode .modal-card{background:#111827!important;border-color:#334155!important;color:#e2e8f0!important}
+body.dark-mode .modal-header,body.dark-mode .modal-footer{border-color:#334155!important}
+body.dark-mode .modal-header h2{color:#f8fafc!important}
+body.dark-mode .modal-header p{color:#94a3b8!important}
+body.dark-mode .app-footer{color:#64748b!important}
+body.dark-mode .version-badge{background:#1e293b!important;color:#cbd5e1!important}
+body.dark-mode .pp-mobile-sidebar-backdrop{background:rgba(2,6,23,.72)!important}
+@media(max-width:850px){body.dark-mode .pp-topbar{background:#111827!important;border-color:#273449!important}body.dark-mode .pp-mobile-menu-btn{background:#1e293b!important;color:#f8fafc!important;border-color:#334155!important}}
+@media(prefers-reduced-motion:no-preference){body.dark-mode *{transition:background-color .18s ease,border-color .18s ease,color .18s ease}}
