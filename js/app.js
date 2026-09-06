@@ -4,7 +4,7 @@
 (function(){const s=document.createElement('script');s.src='js/employee-sidebar-v2.js?v=20260830';s.async=false;document.head.appendChild(s)})();
 function mingguSekarangStart(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return formatDateISO(d)}
 async function kembaliKeMingguIni(){const target=mingguSekarangStart();const current=getPeriodeMinggu();if(!current)return;if(current.start===target){updateStatusNavigasi();return}const input=document.getElementById("tglMulai");if(!input)return;input.value=target;updatePeriodeTanggal(false);updateStatusNavigasi();await muatDataDariCloud()}
-function updateStatusNavigasi(){const btn=document.getElementById("btnMingguIni");if(!btn)return;const current=getPeriodeMinggu();const isCurrent=current&&current.start===mingguSekarangStart();btn.disabled=!!isCurrent;btn.classList.toggle("current",!!isCurrent);btn.textContent=isCurrent?"✓ Minggu Ini":"↩ Minggu Ini"}
+function updateStatusNavigasi(){const btn=document.getElementById("btnMingguIni");const label=document.getElementById("periodeAktif");if(!btn)return;const current=getPeriodeMinggu();const isCurrent=current&&current.start===mingguSekarangStart();btn.disabled=!!isCurrent;btn.classList.toggle("current",!!isCurrent);btn.textContent=isCurrent?"✓ Minggu Ini":"↩ Minggu Ini";if(label)label.classList.toggle("is-current-week",!!isCurrent)}
 document.getElementById("tglMulai").addEventListener("change",()=>updatePeriodeTanggal(true));
 window.addEventListener("DOMContentLoaded",async()=>{
   try{await window.cloudReliabilityReady}catch(e){console.warn(e)}
